@@ -1,9 +1,12 @@
 Flask
 Flask-SQLAlchemy
+Flask-Login
 Werkzeug
 gunicorn
 pandas
 numpy
 scikit-learn
+xgboost
 joblib
 python-dotenv
+requests

@@ -1,0 +1,807 @@
+{% extends "base.html" %}
+
+{% block title %}Sign Up - Instagram Fake Profile Detector{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Instagram-Inspired Color Variables */
+    :root {
+        --insta-gradient: linear-gradient(135deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+        --shadow-sm: 0 5px 20px rgba(0, 0, 0, 0.08);
+        --shadow-md: 0 10px 30px rgba(0, 0, 0, 0.12);
+    }
+    
+    /* Password strength meter */
+    .password-strength-meter {
+        margin-top: 8px;
+        height: 4px;
+        background-color: #e0e0e0;
+        border-radius: 2px;
+        overflow: hidden;
+    }
+    
+    .password-strength-bar {
+        height: 100%;
+        width: 0%;
+        transition: width 0.3s ease;
+        border-radius: 2px;
+    }
+    
+    .strength-weak { background: linear-gradient(90deg, #dc2743, #f56565); width: 25%; }
+    .strength-fair { background: linear-gradient(90deg, #f09433, #fcb045); width: 50%; }
+    .strength-good { background: linear-gradient(90deg, #833ab4, #c39bd3); width: 75%; }
+    .strength-strong { background: linear-gradient(90deg, #56ab2f, #85d469); width: 100%; }
+    
+    .password-strength-text {
+        font-size: 12px;
+        margin-top: 5px;
+        display: block;
+    }
+    
+    /* Validation styles */
+    .is-valid {
+        border-color: #56ab2f !important;
+    }
+    
+    .is-invalid {
+        border-color: #dc2743 !important;
+    }
+    
+    .valid-feedback {
+        color: #56ab2f;
+        font-size: 12px;
+        margin-top: 5px;
+        display: block;
+    }
+    
+    .invalid-feedback {
+        color: #dc2743;
+        font-size: 12px;
+        margin-top: 5px;
+        display: block;
+    }
+    
+    /* Password requirements checklist */
+    .password-requirements {
+        background: #fafafa;
+        padding: 12px;
+        border-radius: 12px;
+        margin-top: 10px;
+        font-size: 12px;
+        border-left: 3px solid #dc2743;
+    }
+    
+    .password-requirements ul {
+        margin: 0;
+        padding-left: 0;
+    }
+    
+    .password-requirements li {
+        margin: 5px 0;
+        list-style: none;
+    }
+    
+    .requirement-met {
+        color: #56ab2f;
+    }
+    
+    .requirement-met i {
+        color: #56ab2f;
+    }
+    
+    .requirement-not-met {
+        color: #8e8e8e;
+    }
+    
+    /* Form steps */
+    .form-step {
+        transition: all 0.3s ease;
+    }
+    
+    /* Progress indicator */
+    .signup-progress {
+        margin-bottom: 30px;
+    }
+    
+    .progress-step {
+        text-align: center;
+        position: relative;
+        flex: 1;
+    }
+    
+    .step-circle {
+        width: 40px;
+        height: 40px;
+        background: #efefef;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 8px;
+        font-weight: 700;
+        transition: all 0.3s;
+        color: #8e8e8e;
+    }
+    
+    .step-circle.active {
+        background: var(--insta-gradient);
+        color: white;
+        box-shadow: 0 4px 10px rgba(220, 39, 67, 0.3);
+    }
+    
+    .step-circle.completed {
+        background: #56ab2f;
+        color: white;
+    }
+    
+    .step-circle.completed i {
+        font-size: 18px;
+    }
+    
+    /* Input group enhancements */
+    .input-group-text {
+        background-color: #fafafa;
+        border: 2px solid #efefef;
+        border-right: none;
+    }
+    
+    .form-control {
+        border: 2px solid #efefef;
+        border-radius: 12px;
+        padding: 12px 16px;
+    }
+    
+    .form-control:focus {
+        border-color: #dc2743;
+        box-shadow: 0 0 0 3px rgba(220, 39, 67, 0.1);
+    }
+    
+    /* Terms checkbox */
+    .terms-checkbox {
+        margin: 20px 0;
+    }
+    
+    .form-check-input:checked {
+        background-color: #dc2743;
+        border-color: #dc2743;
+    }
+    
+    /* Toast notification */
+    .toast-container {
+        z-index: 1050;
+    }
+    
+    /* Card styling */
+    .signup-card {
+        border-radius: 28px;
+        border: none;
+        box-shadow: var(--shadow-md);
+        transition: transform 0.3s;
+    }
+    
+    .signup-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--shadow-sm);
+    }
+    
+    /* Modal styling */
+    .modal-content {
+        border-radius: 20px;
+    }
+    
+    .modal-header {
+        background: var(--insta-gradient);
+        color: white;
+        border: none;
+        border-radius: 20px 20px 0 0;
+    }
+    
+    .modal-header .btn-close {
+        filter: brightness(0) invert(1);
+    }
+    
+    /* Loading button */
+    .btn-loading {
+        position: relative;
+        pointer-events: none;
+        opacity: 0.8;
+    }
+    
+    .btn-loading:after {
+        content: '';
+        position: absolute;
+        width: 18px;
+        height: 18px;
+        top: 50%;
+        left: 50%;
+        margin-left: -9px;
+        margin-top: -9px;
+        border: 2px solid #fff;
+        border-radius: 50%;
+        border-top-color: transparent;
+        animation: spinner 0.6s linear infinite;
+    }
+    
+    @keyframes spinner {
+        to { transform: rotate(360deg); }
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+        .step-circle {
+            width: 35px;
+            height: 35px;
+            font-size: 14px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+        <div class="card signup-card">
+            <div class="card-body p-4 p-md-5">
+                <!-- Header -->
+                <div class="text-center mb-4">
+                    <i class="fab fa-instagram fa-3x mb-3" style="background: var(--insta-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
+                    <h3 class="mb-2 fw-bold" style="color: #262626;">Create Your Account</h3>
+                    <p class="text-muted small">Join us to start detecting fake Instagram profiles</p>
+                </div>
+                
+                <!-- Progress Indicator -->
+                <div class="signup-progress d-flex justify-content-between mb-4">
+                    <div class="progress-step">
+                        <div class="step-circle" id="step1Circle">
+                            <span id="step1Icon">1</span>
+                        </div>
+                        <small class="text-muted">Account</small>
+                    </div>
+                    <div class="progress-step">
+                        <div class="step-circle" id="step2Circle">
+                            <span id="step2Icon">2</span>
+                        </div>
+                        <small class="text-muted">Profile</small>
+                    </div>
+                    <div class="progress-step">
+                        <div class="step-circle" id="step3Circle">
+                            <span id="step3Icon">3</span>
+                        </div>
+                        <small class="text-muted">Complete</small>
+                    </div>
+                </div>
+                
+                <!-- Signup Form -->
+                <form id="signupForm" method="POST" action="{{ url_for('signup') }}" novalidate>
+                    <!-- Step 1: Basic Information -->
+                    <div id="step1" class="form-step">
+                        <!-- Username -->
+                        <div class="mb-3">
+                            <label for="username" class="form-label fw-semibold">Username *</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-user"></i>
+                                </span>
+                                <input type="text" class="form-control" id="username" name="username" 
+                                       required autocomplete="off" placeholder="john_doe">
+                            </div>
+                            <small class="text-muted">3-20 characters, letters, numbers, and underscores only</small>
+                            <div id="usernameFeedback"></div>
+                        </div>
+                        
+                        <!-- Email -->
+                        <div class="mb-3">
+                            <label for="email" class="form-label fw-semibold">Email Address *</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-envelope"></i>
+                                </span>
+                                <input type="email" class="form-control" id="email" name="email" 
+                                       required autocomplete="off" placeholder="john@example.com">
+                            </div>
+                            <div id="emailFeedback"></div>
+                        </div>
+                        
+                        <!-- Password -->
+                        <div class="mb-3">
+                            <label for="password" class="form-label fw-semibold">Password *</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-lock"></i>
+                                </span>
+                                <input type="password" class="form-control" id="password" name="password" required>
+                                <button class="btn btn-outline-secondary" type="button" id="togglePassword" style="border-radius: 0 12px 12px 0;">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            
+                            <!-- Password strength meter -->
+                            <div class="password-strength-meter mt-2">
+                                <div class="password-strength-bar" id="passwordStrengthBar"></div>
+                            </div>
+                            <div class="password-strength-text" id="passwordStrengthText"></div>
+                            
+                            <!-- Password requirements -->
+                            <div class="password-requirements">
+                                <small class="text-muted d-block mb-2">Password must contain:</small>
+                                <ul class="list-unstyled mb-0">
+                                    <li id="lengthReq" class="requirement-not-met">
+                                        <i class="fas fa-circle fa-xs me-2"></i> At least 8 characters
+                                    </li>
+                                    <li id="uppercaseReq" class="requirement-not-met">
+                                        <i class="fas fa-circle fa-xs me-2"></i> At least 1 uppercase letter
+                                    </li>
+                                    <li id="lowercaseReq" class="requirement-not-met">
+                                        <i class="fas fa-circle fa-xs me-2"></i> At least 1 lowercase letter
+                                    </li>
+                                    <li id="numberReq" class="requirement-not-met">
+                                        <i class="fas fa-circle fa-xs me-2"></i> At least 1 number
+                                    </li>
+                                    <li id="specialReq" class="requirement-not-met">
+                                        <i class="fas fa-circle fa-xs me-2"></i> At least 1 special character
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <!-- Confirm Password -->
+                        <div class="mb-4">
+                            <label for="confirm_password" class="form-label fw-semibold">Confirm Password *</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-check-circle"></i>
+                                </span>
+                                <input type="password" class="form-control" id="confirm_password" 
+                                       name="confirm_password" required>
+                            </div>
+                            <div id="confirmFeedback"></div>
+                        </div>
+                        
+                        <button type="button" class="btn btn-primary w-100 py-2" id="nextToStep2" style="background: var(--insta-gradient); border: none; border-radius: 50px; font-weight: 600;">
+                            Next <i class="fas fa-arrow-right ms-2"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- Step 2: Additional Information -->
+                    <div id="step2" class="form-step" style="display: none;">
+                        <!-- Full Name -->
+                        <div class="mb-3">
+                            <label for="fullname" class="form-label fw-semibold">Full Name</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-user-circle"></i>
+                                </span>
+                                <input type="text" class="form-control" id="fullname" name="fullname" placeholder="John Doe">
+                            </div>
+                            <small class="text-muted">Optional - This helps personalize your experience</small>
+                        </div>
+                        
+                        <!-- Bio -->
+                        <div class="mb-3">
+                            <label for="bio" class="form-label fw-semibold">Bio</label>
+                            <textarea class="form-control" id="bio" name="bio" rows="3" 
+                                      maxlength="150" placeholder="Tell us about yourself..."></textarea>
+                            <small class="text-muted">
+                                <span id="bioCount">0</span>/150 characters - Optional
+                            </small>
+                        </div>
+                        
+                        <!-- Newsletter -->
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="newsletter" name="newsletter">
+                            <label class="form-check-label" for="newsletter">
+                                <i class="fas fa-envelope-open-text me-1"></i>
+                                Subscribe to our newsletter for tips and updates
+                            </label>
+                        </div>
+                        
+                        <!-- Terms and Conditions -->
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="terms" name="terms" required>
+                            <label class="form-check-label" for="terms">
+                                I agree to the 
+                                <a href="#" data-bs-toggle="modal" data-bs-target="#termsModal" class="text-decoration-none" style="color: #dc2743;">Terms of Service</a> 
+                                and 
+                                <a href="#" data-bs-toggle="modal" data-bs-target="#privacyModal" class="text-decoration-none" style="color: #dc2743;">Privacy Policy</a>
+                            </label>
+                            <div id="termsFeedback"></div>
+                        </div>
+                        
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-secondary w-50" id="backToStep1" style="border-radius: 50px;">
+                                <i class="fas fa-arrow-left me-2"></i>Back
+                            </button>
+                            <button type="submit" class="btn btn-primary w-50" id="submitSignup" style="background: var(--insta-gradient); border: none; border-radius: 50px; font-weight: 600;">
+                                Sign Up <i class="fas fa-user-plus ms-2"></i>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+                
+                <!-- Login Link -->
+                <div class="text-center mt-4">
+                    <p class="mb-0 small">
+                        Already have an account? 
+                        <a href="{{ url_for('login') }}" class="text-decoration-none fw-bold" style="color: #dc2743;">
+                            Login here
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Terms Modal -->
+<div class="modal fade" id="termsModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Terms of Service</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>By creating an account, you agree to:</p>
+                <ul>
+                    <li>Use the service responsibly</li>
+                    <li>Not misuse or abuse the platform</li>
+                    <li>Respect other users' privacy</li>
+                    <li>Comply with all applicable laws</li>
+                </ul>
+                <p class="mb-0 small text-muted">Last updated: April 2026</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal" style="background: var(--insta-gradient); border: none; border-radius: 50px;">I Agree</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Privacy Modal -->
+<div class="modal fade" id="privacyModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Privacy Policy</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>We value your privacy. We collect:</p>
+                <ul>
+                    <li>Account information you provide</li>
+                    <li>Usage data to improve our service</li>
+                    <li>Search history for your convenience</li>
+                </ul>
+                <p>We never share your personal information with third parties.</p>
+                <p class="mb-0 small text-muted">Last updated: April 2026</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal" style="background: var(--insta-gradient); border: none; border-radius: 50px;">Accept</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Notification -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div id="signupToast" class="toast" role="alert" style="border-radius: 12px; border: none;">
+        <div class="toast-header" style="border-bottom: none;">
+            <i class="fas fa-bell me-2"></i>
+            <strong class="me-auto">Notification</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+        </div>
+        <div class="toast-body"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Show toast notification
+    function showToast(message, type = 'success') {
+        const toastElement = document.getElementById('signupToast');
+        const toast = new bootstrap.Toast(toastElement);
+        const toastBody = document.querySelector('#signupToast .toast-body');
+        const toastHeader = document.querySelector('#signupToast .toast-header');
+        
+        toastBody.textContent = message;
+        
+        if (type === 'error') {
+            toastHeader.style.backgroundColor = '#dc2743';
+            toastHeader.style.color = 'white';
+            toastElement.style.backgroundColor = '#dc2743';
+        } else {
+            toastHeader.style.backgroundColor = '#56ab2f';
+            toastHeader.style.color = 'white';
+            toastElement.style.backgroundColor = '#56ab2f';
+        }
+        
+        toast.show();
+        
+        setTimeout(() => {
+            toastHeader.style.backgroundColor = '';
+            toastHeader.style.color = '';
+            toastElement.style.backgroundColor = '';
+        }, 3000);
+    }
+    
+    // Username validation
+    let usernameTimeout;
+    const usernameInput = document.getElementById('username');
+    if (usernameInput) {
+        usernameInput.addEventListener('input', function() {
+            clearTimeout(usernameTimeout);
+            const username = this.value;
+            const feedback = document.getElementById('usernameFeedback');
+            
+            if (username.length < 3) {
+                feedback.innerHTML = '<div class="invalid-feedback d-block"><i class="fas fa-times-circle"></i> Username must be at least 3 characters</div>';
+                this.classList.add('is-invalid');
+                this.classList.remove('is-valid');
+                return;
+            }
+            
+            if (username.length > 20) {
+                feedback.innerHTML = '<div class="invalid-feedback d-block"><i class="fas fa-times-circle"></i> Username must be at most 20 characters</div>';
+                this.classList.add('is-invalid');
+                this.classList.remove('is-valid');
+                return;
+            }
+            
+            if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+                feedback.innerHTML = '<div class="invalid-feedback d-block"><i class="fas fa-times-circle"></i> Only letters, numbers, and underscores allowed</div>';
+                this.classList.add('is-invalid');
+                this.classList.remove('is-valid');
+                return;
+            }
+            
+            feedback.innerHTML = '<div class="valid-feedback d-block"><i class="fas fa-spinner fa-spin"></i> Checking availability...</div>';
+            
+            usernameTimeout = setTimeout(() => {
+                setTimeout(() => {
+                    // Simulate availability check - this would call the server in production
+                    if (username === 'admin' || username === 'test' || username === 'user') {
+                        feedback.innerHTML = '<div class="invalid-feedback d-block"><i class="fas fa-times-circle"></i> Username already taken</div>';
+                        this.classList.add('is-invalid');
+                        this.classList.remove('is-valid');
+                    } else {
+                        feedback.innerHTML = '<div class="valid-feedback d-block"><i class="fas fa-check-circle"></i> Username available</div>';
+                        this.classList.remove('is-invalid');
+                        this.classList.add('is-valid');
+                    }
+                }, 500);
+            }, 500);
+        });
+    }
+    
+    // Email validation
+    const emailInput = document.getElementById('email');
+    if (emailInput) {
+        emailInput.addEventListener('input', function() {
+            const email = this.value;
+            const feedback = document.getElementById('emailFeedback');
+            const emailRegex = /^[^\s@]+@([^\s@]+\.)+[^\s@]+$/;
+            
+            if (emailRegex.test(email)) {
+                feedback.innerHTML = '<div class="valid-feedback d-block"><i class="fas fa-check-circle"></i> Valid email address</div>';
+                this.classList.remove('is-invalid');
+                this.classList.add('is-valid');
+            } else if (email.length > 0) {
+                feedback.innerHTML = '<div class="invalid-feedback d-block"><i class="fas fa-times-circle"></i> Please enter a valid email address</div>';
+                this.classList.add('is-invalid');
+                this.classList.remove('is-valid');
+            } else {
+                feedback.innerHTML = '';
+                this.classList.remove('is-invalid', 'is-valid');
+            }
+        });
+    }
+    
+    // Password strength checker
+    function checkPasswordStrength(password) {
+        const requirements = {
+            length: password.length >= 8,
+            uppercase: /[A-Z]/.test(password),
+            lowercase: /[a-z]/.test(password),
+            number: /[0-9]/.test(password),
+            special: /[^A-Za-z0-9]/.test(password)
+        };
+        
+        // Update requirement list
+        for (let [key, met] of Object.entries(requirements)) {
+            const element = document.getElementById(`${key}Req`);
+            if (element) {
+                if (met) {
+                    element.innerHTML = '<i class="fas fa-check-circle fa-xs me-2"></i> ';
+                    element.className = 'requirement-met';
+                } else {
+                    element.innerHTML = '<i class="fas fa-circle fa-xs me-2"></i> ';
+                    element.className = 'requirement-not-met';
+                }
+            }
+        }
+        
+        const strength = Object.values(requirements).filter(Boolean).length;
+        const bar = document.getElementById('passwordStrengthBar');
+        const text = document.getElementById('passwordStrengthText');
+        
+        if (password.length === 0) {
+            bar.style.width = '0%';
+            text.innerHTML = '';
+            return false;
+        }
+        
+        let strengthClass = '';
+        let strengthText = '';
+        
+        if (strength <= 2) {
+            strengthClass = 'strength-weak';
+            strengthText = 'Weak password';
+        } else if (strength === 3) {
+            strengthClass = 'strength-fair';
+            strengthText = 'Fair password';
+        } else if (strength === 4) {
+            strengthClass = 'strength-good';
+            strengthText = 'Good password';
+        } else {
+            strengthClass = 'strength-strong';
+            strengthText = 'Strong password';
+        }
+        
+        bar.className = `password-strength-bar ${strengthClass}`;
+        text.innerHTML = strengthText;
+        
+        return strength === 5;
+    }
+    
+    const passwordField = document.getElementById('password');
+    if (passwordField) {
+        passwordField.addEventListener('input', function() {
+            checkPasswordStrength(this.value);
+            const confirm = document.getElementById('confirm_password').value;
+            if (confirm) {
+                validateConfirmPassword();
+            }
+        });
+    }
+    
+    function validateConfirmPassword() {
+        const password = document.getElementById('password').value;
+        const confirm = document.getElementById('confirm_password').value;
+        const feedback = document.getElementById('confirmFeedback');
+        
+        if (confirm && password !== confirm) {
+            feedback.innerHTML = '<div class="invalid-feedback d-block"><i class="fas fa-times-circle"></i> Passwords do not match</div>';
+            document.getElementById('confirm_password').classList.add('is-invalid');
+            document.getElementById('confirm_password').classList.remove('is-valid');
+            return false;
+        } else if (confirm && password === confirm) {
+            feedback.innerHTML = '<div class="valid-feedback d-block"><i class="fas fa-check-circle"></i> Passwords match</div>';
+            document.getElementById('confirm_password').classList.remove('is-invalid');
+            document.getElementById('confirm_password').classList.add('is-valid');
+            return true;
+        }
+        return false;
+    }
+    
+    const confirmPasswordField = document.getElementById('confirm_password');
+    if (confirmPasswordField) {
+        confirmPasswordField.addEventListener('input', validateConfirmPassword);
+    }
+    
+    // Toggle password visibility
+    const togglePasswordBtn = document.getElementById('togglePassword');
+    if (togglePasswordBtn) {
+        togglePasswordBtn.addEventListener('click', function() {
+            const password = document.getElementById('password');
+            const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+            password.setAttribute('type', type);
+            this.querySelector('i').classList.toggle('fa-eye');
+            this.querySelector('i').classList.toggle('fa-eye-slash');
+        });
+    }
+    
+    // Step navigation
+    function validateStep1() {
+        const username = document.getElementById('username').value;
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const confirm = document.getElementById('confirm_password').value;
+        
+        if (!username || username.length < 3) {
+            showToast('Please enter a valid username (min 3 characters)', 'error');
+            return false;
+        }
+        
+        if (username.length > 20) {
+            showToast('Username must be at most 20 characters', 'error');
+            return false;
+        }
+        
+        if (!email || !/^[^\s@]+@([^\s@]+\.)+[^\s@]+$/.test(email)) {
+            showToast('Please enter a valid email address', 'error');
+            return false;
+        }
+        
+        if (!checkPasswordStrength(password)) {
+            showToast('Please create a stronger password (min 8 characters with uppercase, lowercase, number, and special character)', 'error');
+            return false;
+        }
+        
+        if (password !== confirm) {
+            showToast('Passwords do not match', 'error');
+            return false;
+        }
+        
+        return true;
+    }
+    
+    const nextBtn = document.getElementById('nextToStep2');
+    if (nextBtn) {
+        nextBtn.addEventListener('click', function() {
+            if (validateStep1()) {
+                document.getElementById('step1').style.display = 'none';
+                document.getElementById('step2').style.display = 'block';
+                document.getElementById('step1Circle').innerHTML = '<i class="fas fa-check"></i>';
+                document.getElementById('step1Circle').classList.add('completed');
+                document.getElementById('step2Circle').classList.add('active');
+                document.getElementById('step2Icon').textContent = '2';
+            }
+        });
+    }
+    
+    const backBtn = document.getElementById('backToStep1');
+    if (backBtn) {
+        backBtn.addEventListener('click', function() {
+            document.getElementById('step2').style.display = 'none';
+            document.getElementById('step1').style.display = 'block';
+            document.getElementById('step2Circle').classList.remove('active');
+            document.getElementById('step1Circle').innerHTML = '1';
+            document.getElementById('step1Circle').classList.remove('completed');
+            document.getElementById('step1Circle').classList.add('active');
+            document.getElementById('step1Icon').textContent = '1';
+        });
+    }
+    
+    // Bio character counter
+    const bioField = document.getElementById('bio');
+    if (bioField) {
+        bioField.addEventListener('input', function() {
+            document.getElementById('bioCount').textContent = this.value.length;
+        });
+    }
+    
+    // Form submission
+    const signupForm = document.getElementById('signupForm');
+    if (signupForm) {
+        signupForm.addEventListener('submit', function(e) {
+            const terms = document.getElementById('terms').checked;
+            
+            if (!terms) {
+                e.preventDefault();
+                showToast('Please accept the Terms of Service and Privacy Policy', 'error');
+                document.getElementById('termsFeedback').innerHTML = '<div class="invalid-feedback d-block"><i class="fas fa-times-circle"></i> You must agree to the terms</div>';
+                return;
+            }
+            
+            const submitBtn = document.getElementById('submitSignup');
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating Account...';
+            submitBtn.classList.add('btn-loading');
+            submitBtn.disabled = true;
+        });
+    }
+    
+    // Display flash messages
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                showToast('{{ message }}', '{{ category }}');
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    // Console greeting
+    console.log('%c Instagram Fake Profile Detector - Sign Up', 'color: #dc2743; font-size: 14px; font-weight: bold;');
+    console.log('%c Join the community | XGBoost Model Integration', 'color: #f09433; font-size: 12px;');
+</script>
+{% endblock %}

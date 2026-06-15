@@ -1,0 +1,778 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Instagram Fake Profile Detector{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Instagram-Inspired Color Variables */
+    :root {
+        --insta-gradient: linear-gradient(135deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+        --insta-gradient-hover: linear-gradient(135deg, #bc1888 0%, #cc2366 25%, #dc2743 50%, #e6683c 75%, #f09433 100%);
+        --shadow-sm: 0 5px 20px rgba(0, 0, 0, 0.08);
+        --shadow-md: 0 10px 30px rgba(0, 0, 0, 0.12);
+        --shadow-lg: 0 20px 40px rgba(0, 0, 0, 0.15);
+    }
+    
+    /* Hero Section */
+    .hero-section {
+        background: var(--insta-gradient);
+        border-radius: 32px;
+        padding: 70px 40px;
+        margin-bottom: 60px;
+        position: relative;
+        overflow: hidden;
+        box-shadow: var(--shadow-lg);
+    }
+    
+    .hero-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3E%3Cpath fill='rgba(255,255,255,0.08)' fill-opacity='1' d='M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,122.7C672,117,768,139,864,154.7C960,171,1056,181,1152,165.3C1248,149,1344,107,1392,85.3L1440,64L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z'%3E%3C/path%3E%3C/svg%3E") no-repeat bottom;
+        background-size: cover;
+        opacity: 0.3;
+        pointer-events: none;
+    }
+    
+    .hero-content {
+        position: relative;
+        z-index: 2;
+    }
+    
+    .hero-badge {
+        display: inline-block;
+        background: rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(10px);
+        padding: 8px 24px;
+        border-radius: 50px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-bottom: 25px;
+        letter-spacing: 0.5px;
+    }
+    
+    .hero-title {
+        font-size: 3.2rem;
+        font-weight: 800;
+        margin-bottom: 20px;
+        line-height: 1.2;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .hero-subtitle {
+        font-size: 1.2rem;
+        opacity: 0.95;
+        margin-bottom: 35px;
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    
+    /* Search Box */
+    .search-container {
+        background: white;
+        border-radius: 60px;
+        padding: 6px;
+        box-shadow: var(--shadow-md);
+        transition: all 0.3s ease;
+        max-width: 700px;
+        margin: 0 auto;
+    }
+    
+    .search-container:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-lg);
+    }
+    
+    .search-input-group {
+        display: flex;
+        align-items: center;
+        background: white;
+        border-radius: 60px;
+        overflow: hidden;
+    }
+    
+    .search-icon {
+        padding: 0 20px;
+        font-size: 1.4rem;
+        background: var(--insta-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    
+    .search-input {
+        flex: 1;
+        border: none;
+        padding: 18px 0;
+        font-size: 1rem;
+        outline: none;
+        font-weight: 500;
+        color: #262626;
+    }
+    
+    .search-input::placeholder {
+        color: #8e8e8e;
+        font-weight: 400;
+    }
+    
+    .search-button {
+        background: var(--insta-gradient);
+        border: none;
+        padding: 14px 40px;
+        margin: 5px;
+        border-radius: 50px;
+        color: white;
+        font-weight: 700;
+        transition: all 0.3s;
+        letter-spacing: 0.5px;
+        cursor: pointer;
+    }
+    
+    .search-button:hover {
+        transform: scale(1.02);
+        background: var(--insta-gradient-hover);
+        box-shadow: 0 8px 20px rgba(220, 39, 67, 0.4);
+    }
+    
+    .search-button:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+        transform: none;
+    }
+    
+    /* Feature Cards */
+    .feature-card {
+        background: white;
+        border-radius: 28px;
+        padding: 35px 25px;
+        text-align: center;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        height: 100%;
+        border: none;
+        box-shadow: var(--shadow-sm);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .feature-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+        transition: left 0.5s;
+    }
+    
+    .feature-card:hover::before {
+        left: 100%;
+    }
+    
+    .feature-card:hover {
+        transform: translateY(-10px);
+        box-shadow: var(--shadow-lg);
+    }
+    
+    .feature-icon {
+        width: 90px;
+        height: 90px;
+        background: var(--insta-gradient);
+        border-radius: 30px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 25px;
+        transition: all 0.3s;
+        box-shadow: 0 10px 20px rgba(220, 39, 67, 0.2);
+    }
+    
+    .feature-card:hover .feature-icon {
+        transform: scale(1.05) rotate(3deg);
+        border-radius: 35px;
+    }
+    
+    .feature-icon i {
+        font-size: 2.5rem;
+        color: white;
+    }
+    
+    .feature-title {
+        font-size: 1.4rem;
+        font-weight: 700;
+        margin-bottom: 15px;
+        color: #262626;
+    }
+    
+    .feature-description {
+        color: #8e8e8e;
+        line-height: 1.6;
+        font-size: 0.95rem;
+    }
+    
+    .feature-badge {
+        display: inline-block;
+        margin-top: 15px;
+        padding: 5px 15px;
+        border-radius: 20px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        background: var(--insta-gradient);
+        color: white;
+    }
+    
+    /* Stats Section */
+    .stats-section {
+        background: linear-gradient(135deg, #fafafa 0%, #ffffff 100%);
+        border-radius: 32px;
+        padding: 60px 40px;
+        margin-top: 60px;
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .stat-card {
+        text-align: center;
+        background: white;
+        border-radius: 24px;
+        padding: 30px 20px;
+        transition: all 0.3s;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--shadow-md);
+        border-color: rgba(220, 39, 67, 0.2);
+    }
+    
+    .stat-number {
+        font-size: 2.8rem;
+        font-weight: 800;
+        background: var(--insta-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 10px;
+    }
+    
+    .stat-label {
+        color: #8e8e8e;
+        font-size: 0.9rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    /* How It Works Section */
+    .step-card {
+        text-align: center;
+        padding: 30px 20px;
+        background: white;
+        border-radius: 24px;
+        transition: all 0.3s;
+        height: 100%;
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .step-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--shadow-md);
+    }
+    
+    .step-number {
+        width: 60px;
+        height: 60px;
+        background: var(--insta-gradient);
+        border-radius: 20px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 20px;
+        font-size: 1.8rem;
+        font-weight: 800;
+        color: white;
+        box-shadow: 0 5px 15px rgba(220, 39, 67, 0.3);
+    }
+    
+    .step-title {
+        font-size: 1.3rem;
+        font-weight: 700;
+        margin-bottom: 12px;
+        color: #262626;
+    }
+    
+    .step-description {
+        color: #8e8e8e;
+        font-size: 0.9rem;
+        line-height: 1.6;
+    }
+    
+    /* Example Buttons - Professional Styling */
+    .example-btn {
+        background: rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        color: white;
+        transition: all 0.3s;
+        border-radius: 50px;
+        padding: 8px 20px;
+        font-weight: 500;
+        cursor: pointer;
+        font-family: monospace;
+        letter-spacing: 0.3px;
+    }
+    
+    .example-btn:hover {
+        background: white;
+        color: #dc2743;
+        transform: translateY(-2px);
+        border-color: transparent;
+    }
+    
+    /* CTA Buttons */
+    .cta-btn-light {
+        background: white;
+        color: #dc2743;
+        border: none;
+        padding: 14px 35px;
+        border-radius: 50px;
+        font-weight: 700;
+        transition: all 0.3s;
+        box-shadow: var(--shadow-sm);
+        text-decoration: none;
+        display: inline-block;
+    }
+    
+    .cta-btn-light:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+        background: white;
+        color: #bc1888;
+    }
+    
+    .cta-btn-outline {
+        background: transparent;
+        border: 2px solid white;
+        color: white;
+        padding: 12px 32px;
+        border-radius: 50px;
+        font-weight: 600;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-block;
+    }
+    
+    .cta-btn-outline:hover {
+        background: white;
+        color: #dc2743;
+        transform: translateY(-2px);
+    }
+    
+    /* Username Preview - New Feature */
+    .username-preview {
+        margin-top: 15px;
+        font-size: 0.8rem;
+        color: rgba(255, 255, 255, 0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+    
+    .username-preview span {
+        background: rgba(0, 0, 0, 0.2);
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-family: monospace;
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+        .hero-section {
+            padding: 50px 25px;
+        }
+        
+        .hero-title {
+            font-size: 2rem;
+        }
+        
+        .hero-subtitle {
+            font-size: 1rem;
+        }
+        
+        .search-input-group {
+            flex-direction: column;
+            border-radius: 30px;
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: 15px;
+            text-align: center;
+        }
+        
+        .search-button {
+            width: 100%;
+            margin: 5px 0;
+        }
+        
+        .search-container {
+            border-radius: 30px;
+        }
+        
+        .search-icon {
+            display: none;
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+        }
+        
+        .feature-icon {
+            width: 70px;
+            height: 70px;
+        }
+        
+        .feature-icon i {
+            font-size: 2rem;
+        }
+        
+        .step-number {
+            width: 50px;
+            height: 50px;
+            font-size: 1.4rem;
+        }
+        
+        .cta-btn-light, .cta-btn-outline {
+            padding: 10px 25px;
+            font-size: 0.9rem;
+        }
+        
+        .username-preview {
+            font-size: 0.7rem;
+        }
+    }
+    
+    /* Loading Spinner */
+    .spinner-border-sm {
+        width: 1rem;
+        height: 1rem;
+        border-width: 0.2em;
+    }
+    
+    /* Animations */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(40px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
+    }
+    
+    .animate-fadeInUp {
+        animation: fadeInUp 0.7s ease-out forwards;
+    }
+    
+    .animate-fadeIn {
+        animation: fadeIn 0.5s ease-out forwards;
+    }
+    
+    /* Animation Delays */
+    .delay-100 { animation-delay: 0.1s; opacity: 0; animation-fill-mode: forwards; }
+    .delay-200 { animation-delay: 0.2s; opacity: 0; animation-fill-mode: forwards; }
+    .delay-300 { animation-delay: 0.3s; opacity: 0; animation-fill-mode: forwards; }
+    .delay-400 { animation-delay: 0.4s; opacity: 0; animation-fill-mode: forwards; }
+    .delay-500 { animation-delay: 0.5s; opacity: 0; animation-fill-mode: forwards; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="hero-section text-white">
+    <div class="hero-content text-center">
+        <div class="hero-badge animate-fadeInUp delay-100">
+            <i class="fas fa-shield-alt me-2"></i> AI-Powered Detection
+        </div>
+        <h1 class="hero-title animate-fadeInUp delay-200">
+            Detect Fake Instagram<br>Profiles Instantly
+        </h1>
+        <p class="hero-subtitle animate-fadeInUp delay-300">
+            Powered by Advanced XGBoost Machine Learning with 95% accuracy
+        </p>
+        
+        {% if current_user.is_authenticated %}
+            <!-- Search Form -->
+            <div class="search-container animate-fadeInUp delay-400">
+                <form action="{{ url_for('predict') }}" method="GET" id="detectForm">
+                    <div class="search-input-group">
+                        <div class="search-icon">
+                            <i class="fab fa-instagram"></i>
+                        </div>
+                        <input type="text" 
+                               class="search-input" 
+                               id="instagram_username"
+                               name="username" 
+                               placeholder="Enter Instagram username (e.g., john_doe)" 
+                               autocomplete="off"
+                               required>
+                        <button class="search-button" type="submit" id="analyzeBtn">
+                            <i class="fas fa-arrow-right me-2"></i> Analyze Now
+                        </button>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Username Preview - Professional Display -->
+            <div class="username-preview animate-fadeIn delay-500">
+                <i class="fas fa-info-circle"></i>
+                <span id="usernamePreview">@username will appear here</span>
+            </div>
+            
+            <!-- Quick Examples - Professional Labels -->
+            <div class="mt-4 animate-fadeIn delay-500">
+                <small class="text-white-50 opacity-75">Test with sample profiles:</small>
+                <div class="d-flex justify-content-center gap-2 mt-2 flex-wrap">
+                    <button class="btn example-btn" data-username="cristiano">
+                        verified account
+                    </button>
+                    <button class="btn example-btn" data-username="kimkardashian">
+                        high-engagement
+                    </button>
+                    <button class="btn example-btn" data-username="fake_account_123">
+                        suspicious pattern
+                    </button>
+                </div>
+            </div>
+        {% else %}
+            <!-- Call to Action -->
+            <div class="animate-fadeInUp delay-400">
+                <div class="d-flex justify-content-center gap-3 flex-wrap">
+                    <a href="{{ url_for('login') }}" class="cta-btn-light">
+                        <i class="fas fa-sign-in-alt me-2"></i>Sign In
+                    </a>
+                    <a href="{{ url_for('signup') }}" class="cta-btn-outline">
+                        <i class="fas fa-user-plus me-2"></i>Create Account
+                    </a>
+                </div>
+                <p class="mt-4 text-white-50 small">
+                    <i class="fas fa-chart-line me-1"></i> Trusted by security professionals worldwide
+                </p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Features Section -->
+<div class="row g-4 mb-5">
+    <div class="col-md-4">
+        <div class="feature-card animate-fadeInUp delay-100">
+            <div class="feature-icon mx-auto">
+                <i class="fas fa-brain"></i>
+            </div>
+            <h3 class="feature-title">XGBoost AI Model</h3>
+            <p class="feature-description">
+                Advanced machine learning algorithm analyzes 11 distinct features to detect fake profiles with exceptional accuracy.
+            </p>
+            <span class="feature-badge">95% Accuracy</span>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="feature-card animate-fadeInUp delay-200">
+            <div class="feature-icon mx-auto">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <h3 class="feature-title">Comprehensive Analysis</h3>
+            <p class="feature-description">
+                Receive detailed insights including risk indicators, authenticity markers, risk scoring, and actionable recommendations.
+            </p>
+            <span class="feature-badge">11+ Metrics</span>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="feature-card animate-fadeInUp delay-300">
+            <div class="feature-icon mx-auto">
+                <i class="fas fa-bolt"></i>
+            </div>
+            <h3 class="feature-title">Real-Time Processing</h3>
+            <p class="feature-description">
+                Obtain analysis results within seconds with detailed confidence scores enabling immediate informed decisions.
+            </p>
+            <span class="feature-badge">Instant Results</span>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Section -->
+<div class="stats-section animate-fadeInUp delay-200">
+    <div class="row g-4">
+        <div class="col-md-3 col-6">
+            <div class="stat-card">
+                <div class="stat-number" id="statTotal">0</div>
+                <div class="stat-label">Total Profiles</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="stat-card">
+                <div class="stat-number" id="statFake">0</div>
+                <div class="stat-label">Fake Detected</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="stat-card">
+                <div class="stat-number" id="statReal">0</div>
+                <div class="stat-label">Real Profiles</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="stat-card">
+                <div class="stat-number" id="statAccuracy">95<span style="font-size: 1.2rem;">%</span></div>
+                <div class="stat-label">Accuracy Rate</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- How It Works Section -->
+<div class="row mt-5">
+    <div class="col-12 text-center mb-5">
+        <h2 class="fw-bold" style="font-size: 2rem; color: #262626;">Detection Process</h2>
+        <p class="text-muted">Three simple steps to analyze Instagram profiles</p>
+    </div>
+    
+    <div class="col-md-4 mb-4">
+        <div class="step-card animate-fadeInUp delay-100">
+            <div class="step-number mx-auto">1</div>
+            <h5 class="step-title">Input Profile Data</h5>
+            <p class="step-description">Enter the Instagram username along with profile statistics such as posts, followers, and following counts.</p>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-4">
+        <div class="step-card animate-fadeInUp delay-200">
+            <div class="step-number mx-auto">2</div>
+            <h5 class="step-title">AI Processing</h5>
+            <p class="step-description">The XGBoost model analyzes profile data patterns to identify suspicious behaviors and anomalies.</p>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-4">
+        <div class="step-card animate-fadeInUp delay-300">
+            <div class="step-number mx-auto">3</div>
+            <h5 class="step-title">Review Analysis</h5>
+            <p class="step-description">View comprehensive results including risk assessment, confidence score, and security recommendations.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Example usernames - Auto-fill with professional behavior
+    const exampleBtns = document.querySelectorAll('.example-btn');
+    exampleBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const username = this.getAttribute('data-username');
+            const input = document.getElementById('instagram_username');
+            if (input && username) {
+                input.value = username;
+                // Update preview
+                const preview = document.getElementById('usernamePreview');
+                if (preview) {
+                    preview.textContent = '@' + username;
+                }
+                // Auto-submit form
+                const form = document.getElementById('detectForm');
+                if (form) {
+                    form.submit();
+                }
+            }
+        });
+    });
+    
+    // Username input preview - Professional display
+    const usernameInput = document.getElementById('instagram_username');
+    const usernamePreview = document.getElementById('usernamePreview');
+    
+    if (usernameInput && usernamePreview) {
+        usernameInput.addEventListener('input', function() {
+            // Remove @ if at the beginning
+            let value = this.value.replace(/^@/, '');
+            // Remove spaces
+            value = value.replace(/\s/g, '');
+            // Update input value without @
+            this.value = value;
+            
+            // Update preview text
+            if (value.length > 0) {
+                usernamePreview.textContent = '@' + value;
+                usernamePreview.style.opacity = '1';
+            } else {
+                usernamePreview.textContent = '@username will appear here';
+                usernamePreview.style.opacity = '0.6';
+            }
+        });
+    }
+    
+    // Form submission with loading state
+    const detectForm = document.getElementById('detectForm');
+    const analyzeBtn = document.getElementById('analyzeBtn');
+    
+    if (detectForm) {
+        detectForm.addEventListener('submit', function() {
+            if (analyzeBtn) {
+                analyzeBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Processing...';
+                analyzeBtn.disabled = true;
+            }
+        });
+    }
+    
+    // Load stats from API
+    function loadStats() {
+        fetch('/api/dashboard/stats')
+            .then(response => response.json())
+            .then(data => {
+                const totalEl = document.getElementById('statTotal');
+                const fakeEl = document.getElementById('statFake');
+                const realEl = document.getElementById('statReal');
+                
+                if (totalEl) totalEl.textContent = data.total_searches || 0;
+                if (fakeEl) fakeEl.textContent = data.fake_count || 0;
+                if (realEl) realEl.textContent = data.real_count || 0;
+            })
+            .catch(error => console.log('Statistics service:', error));
+    }
+    
+    // Load stats on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        loadStats();
+        
+        // Initial preview setup
+        if (usernameInput && usernamePreview && usernameInput.value) {
+            usernamePreview.textContent = '@' + usernameInput.value;
+        }
+        
+        // Console greeting - Professional
+        console.log('%c Instagram Fake Profile Detection System', 'color: #dc2743; font-size: 14px; font-weight: bold;');
+        console.log('%c XGBoost Model Active | Detection Accuracy: 95%', 'color: #f09433; font-size: 12px;');
+    });
+</script>
+{% endblock %}

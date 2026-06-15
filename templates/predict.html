@@ -1,0 +1,1163 @@
+{% extends "base.html" %}
+
+{% block title %}Analyze Profile - Instagram Fake Profile Detector{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Instagram-Inspired Color Variables */
+    :root {
+        --insta-gradient: linear-gradient(135deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+        --insta-gradient-hover: linear-gradient(135deg, #bc1888 0%, #cc2366 25%, #dc2743 50%, #e6683c 75%, #f09433 100%);
+        --shadow-sm: 0 5px 20px rgba(0, 0, 0, 0.08);
+        --shadow-md: 0 10px 30px rgba(0, 0, 0, 0.12);
+        --shadow-lg: 0 20px 40px rgba(0, 0, 0, 0.15);
+    }
+    
+    /* Prediction Page Header */
+    .prediction-header {
+        background: var(--insta-gradient);
+        border-radius: 32px;
+        padding: 50px 40px;
+        margin-bottom: 40px;
+        color: white;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+        box-shadow: var(--shadow-lg);
+    }
+    
+    .prediction-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3E%3Cpath fill='rgba(255,255,255,0.08)' fill-opacity='1' d='M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,122.7C672,117,768,139,864,154.7C960,171,1056,181,1152,165.3C1248,149,1344,107,1392,85.3L1440,64L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z'%3E%3C/path%3E%3C/svg%3E") no-repeat bottom;
+        background-size: cover;
+        opacity: 0.3;
+        pointer-events: none;
+    }
+    
+    .prediction-header h1 {
+        font-size: 2.5rem;
+        font-weight: 800;
+        margin-bottom: 15px;
+        position: relative;
+        z-index: 1;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .prediction-header p {
+        font-size: 1.1rem;
+        opacity: 0.95;
+        position: relative;
+        z-index: 1;
+    }
+    
+    /* Form Card */
+    .form-card {
+        border-radius: 28px;
+        border: none;
+        box-shadow: var(--shadow-md);
+        overflow: hidden;
+        transition: transform 0.3s;
+    }
+    
+    .form-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--shadow-lg);
+    }
+    
+    .form-section {
+        padding: 30px;
+        border-bottom: 1px solid #efefef;
+        background: white;
+    }
+    
+    .form-section:last-child {
+        border-bottom: none;
+    }
+    
+    .section-title {
+        font-size: 1.2rem;
+        font-weight: 700;
+        margin-bottom: 25px;
+        color: #262626;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding-bottom: 12px;
+        border-bottom: 2px solid #efefef;
+    }
+    
+    .section-title i {
+        background: var(--insta-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        font-size: 1.4rem;
+    }
+    
+    .form-label {
+        font-weight: 600;
+        color: #262626;
+        margin-bottom: 8px;
+        font-size: 0.9rem;
+    }
+    
+    .form-label i {
+        margin-right: 6px;
+        color: #8e8e8e;
+    }
+    
+    .form-control, .form-select {
+        border-radius: 16px;
+        border: 2px solid #efefef;
+        padding: 12px 16px;
+        transition: all 0.3s;
+        font-size: 0.95rem;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        border-color: #dc2743;
+        box-shadow: 0 0 0 3px rgba(220, 39, 67, 0.1);
+        outline: none;
+    }
+    
+    /* Input Group Custom */
+    .input-group-custom {
+        position: relative;
+    }
+    
+    .input-group-custom .form-control {
+        padding-left: 45px;
+    }
+    
+    .input-icon {
+        position: absolute;
+        left: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #8e8e8e;
+        z-index: 10;
+        font-weight: 600;
+    }
+    
+    /* Predict Button */
+    .btn-predict {
+        background: var(--insta-gradient);
+        color: white;
+        border: none;
+        border-radius: 60px;
+        padding: 16px 40px;
+        font-size: 1.1rem;
+        font-weight: 700;
+        transition: all 0.3s;
+        width: 100%;
+        letter-spacing: 0.5px;
+        cursor: pointer;
+    }
+    
+    .btn-predict:hover {
+        transform: translateY(-3px);
+        background: var(--insta-gradient-hover);
+        box-shadow: 0 10px 25px rgba(220, 39, 67, 0.4);
+    }
+    
+    .btn-predict:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+    }
+    
+    /* Info Box */
+    .info-box {
+        background: #fafafa;
+        border-radius: 14px;
+        padding: 12px 16px;
+        margin-top: 12px;
+        font-size: 0.8rem;
+        color: #8e8e8e;
+        border-left: 3px solid #dc2743;
+    }
+    
+    .info-box i {
+        color: #dc2743;
+        margin-right: 8px;
+    }
+    
+    /* Example Cards */
+    .example-card {
+        background: linear-gradient(135deg, #fafafa 0%, #ffffff 100%);
+        border-radius: 20px;
+        padding: 20px;
+        cursor: pointer;
+        transition: all 0.3s;
+        border: 2px solid #efefef;
+        text-align: center;
+    }
+    
+    .example-card:hover {
+        border-color: #dc2743;
+        transform: translateY(-5px);
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .example-card i {
+        font-size: 2rem;
+        margin-bottom: 10px;
+        display: block;
+    }
+    
+    .example-card.fake i {
+        color: #dc2743;
+    }
+    
+    .example-card.real i {
+        color: #56ab2f;
+    }
+    
+    .example-card h6 {
+        font-weight: 700;
+        margin-bottom: 5px;
+        color: #262626;
+    }
+    
+    .example-card p {
+        font-size: 0.7rem;
+        color: #8e8e8e;
+        margin-bottom: 0;
+    }
+    
+    /* Loading Overlay */
+    .loading-overlay-custom {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.85);
+        backdrop-filter: blur(8px);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+    }
+    
+    .loader {
+        text-align: center;
+        background: white;
+        padding: 40px 50px;
+        border-radius: 32px;
+        animation: slideUp 0.3s ease;
+        box-shadow: var(--shadow-lg);
+    }
+    
+    @keyframes slideUp {
+        from {
+            transform: translateY(50px);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+    
+    .loader-spinner {
+        width: 60px;
+        height: 60px;
+        border: 4px solid #efefef;
+        border-top: 4px solid #dc2743;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    
+    /* Result Card - NEW ADDITION */
+    .result-card {
+        border-radius: 28px;
+        margin-top: 40px;
+        animation: slideUp 0.5s ease;
+    }
+    
+    .result-header {
+        padding: 30px;
+        text-align: center;
+        color: white;
+        border-radius: 28px 28px 0 0;
+    }
+    
+    .result-header.fake {
+        background: linear-gradient(135deg, #dc2743 0%, #bc1888 100%);
+    }
+    
+    .result-header.real {
+        background: linear-gradient(135deg, #56ab2f 0%, #a8e063 100%);
+    }
+    
+    .result-confidence {
+        font-size: 48px;
+        font-weight: 800;
+        margin: 20px 0;
+    }
+    
+    .result-body {
+        background: white;
+        padding: 30px;
+        border-radius: 0 0 28px 28px;
+    }
+    
+    .detail-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 12px 0;
+        border-bottom: 1px solid #efefef;
+    }
+    
+    .detail-row:last-child {
+        border-bottom: none;
+    }
+    
+    .detail-label {
+        color: #8e8e8e;
+        font-weight: 500;
+    }
+    
+    .detail-value {
+        font-weight: 600;
+        color: #262626;
+    }
+    
+    /* Feature Alert */
+    .feature-alert {
+        background: linear-gradient(135deg, #fafafa 0%, #ffffff 100%);
+        border-radius: 20px;
+        padding: 20px;
+        border-left: 4px solid #dc2743;
+    }
+    
+    /* Derived Features Preview */
+    .derived-features {
+        margin-top: 15px;
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 16px;
+        display: none;
+    }
+    
+    .derived-features.show {
+        display: block;
+        animation: fadeIn 0.3s ease;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .feature-badge {
+        display: inline-block;
+        background: white;
+        padding: 4px 12px;
+        border-radius: 50px;
+        font-size: 0.7rem;
+        margin: 4px;
+        border: 1px solid #e2e8f0;
+    }
+    
+    /* Progress Bar */
+    .progress-custom {
+        height: 12px;
+        border-radius: 20px;
+        background: #e2e8f0;
+        overflow: hidden;
+        margin: 10px 0;
+    }
+    
+    .progress-fill {
+        height: 100%;
+        border-radius: 20px;
+        transition: width 0.5s ease;
+    }
+    
+    .progress-fill.fake {
+        background: linear-gradient(90deg, #dc2743, #bc1888);
+    }
+    
+    .progress-fill.real {
+        background: linear-gradient(90deg, #56ab2f, #a8e063);
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+        .prediction-header {
+            padding: 30px 20px;
+        }
+        
+        .prediction-header h1 {
+            font-size: 1.6rem;
+        }
+        
+        .prediction-header p {
+            font-size: 0.9rem;
+        }
+        
+        .form-section {
+            padding: 20px;
+        }
+        
+        .section-title {
+            font-size: 1rem;
+        }
+        
+        .btn-predict {
+            padding: 14px 30px;
+            font-size: 1rem;
+        }
+        
+        .example-card {
+            padding: 15px;
+        }
+        
+        .example-card i {
+            font-size: 1.5rem;
+        }
+        
+        .loader {
+            padding: 30px 40px;
+        }
+        
+        .result-confidence {
+            font-size: 32px;
+        }
+    }
+    
+    /* Animation */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .animate-fadeInUp {
+        animation: fadeInUp 0.6s ease-out forwards;
+    }
+    
+    .delay-100 { animation-delay: 0.1s; opacity: 0; animation-fill-mode: forwards; }
+    .delay-200 { animation-delay: 0.2s; opacity: 0; animation-fill-mode: forwards; }
+    .delay-300 { animation-delay: 0.3s; opacity: 0; animation-fill-mode: forwards; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="prediction-header">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <h1>
+                <i class="fab fa-instagram me-3"></i>
+                Analyze Instagram Profile
+            </h1>
+            <p>Enter the profile details to detect if it's fake or authentic using our AI-powered XGBoost model</p>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Example Cards -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="mb-0 fw-bold">Quick Examples</h6>
+            <small class="text-muted">Click to load example data</small>
+        </div>
+        <div class="row g-3">
+            <div class="col-md-4">
+                <div class="example-card fake" onclick="loadExampleData('fake')">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <h6>Fake Profile Example</h6>
+                    <p>Low posts, many following, no bio</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="example-card real" onclick="loadExampleData('real')">
+                    <i class="fas fa-check-circle"></i>
+                    <h6>Real Profile Example</h6>
+                    <p>Good engagement, detailed bio</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="example-card" onclick="clearForm()">
+                    <i class="fas fa-eraser"></i>
+                    <h6>Clear Form</h6>
+                    <p>Reset all fields</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Prediction Form -->
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="card form-card">
+            <form id="predictionForm" method="POST" action="{{ url_for('predict') }}">
+                <!-- Basic Information Section -->
+                <div class="form-section">
+                    <div class="section-title">
+                        <i class="fas fa-user-circle"></i>
+                        Basic Information
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">
+                                <i class="fab fa-instagram"></i> Instagram Username *
+                            </label>
+                            <div class="input-group-custom">
+                                <span class="input-icon">@</span>
+                                <input type="text" class="form-control" id="username" name="username" 
+                                       placeholder="john_doe" required autocomplete="off">
+                            </div>
+                            <div class="info-box">
+                                <i class="fas fa-info-circle"></i>
+                                Enter the username without @ symbol (e.g., john_doe)
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">
+                                <i class="fas fa-signature"></i> Full Name
+                            </label>
+                            <input type="text" class="form-control" id="full_name" name="full_name" 
+                                   placeholder="John Doe" autocomplete="off">
+                        </div>
+                        <div class="col-12 mb-3">
+                            <label class="form-label">
+                                <i class="fas fa-file-alt"></i> Bio / Description
+                            </label>
+                            <textarea class="form-control" id="bio" name="bio" rows="3" 
+                                      placeholder="Enter the profile bio..."></textarea>
+                            <small class="text-muted mt-1" id="bioCounter">0 characters</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Profile Settings Section -->
+                <div class="form-section">
+                    <div class="section-title">
+                        <i class="fas fa-cog"></i>
+                        Profile Settings
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">
+                                <i class="fas fa-camera"></i> Has Profile Picture?
+                            </label>
+                            <select class="form-select" id="has_profile_pic" name="has_profile_pic">
+                                <option value="1">Yes - Has profile picture</option>
+                                <option value="0" selected>No - No profile picture</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">
+                                <i class="fas fa-lock"></i> Is Account Private?
+                            </label>
+                            <select class="form-select" id="is_private" name="is_private">
+                                <option value="0" selected>Public Account</option>
+                                <option value="1">Private Account</option>
+                            </select>
+                        </div>
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label">
+                                <i class="fas fa-link"></i> Has External URL?
+                            </label>
+                            <select class="form-select" id="external_url" name="external_url">
+                                <option value="1">Yes - Has website/link in bio</option>
+                                <option value="0" selected>No - No external link</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Statistics Section -->
+                <div class="form-section">
+                    <div class="section-title">
+                        <i class="fas fa-chart-line"></i>
+                        Account Statistics
+                        <button type="button" class="btn btn-sm btn-link ms-auto" onclick="toggleDerivedFeatures()" style="color: #dc2743;">
+                            <i class="fas fa-chart-simple"></i> Show Derived Features
+                        </button>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">
+                                <i class="fas fa-image"></i> Number of Posts
+                            </label>
+                            <input type="number" class="form-control" id="posts" name="posts" 
+                                   value="0" min="0" step="1" required onchange="updateDerivedFeatures()" oninput="updateDerivedFeatures()">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">
+                                <i class="fas fa-users"></i> Followers Count
+                            </label>
+                            <input type="number" class="form-control" id="followers" name="followers" 
+                                   value="0" min="0" step="1" required onchange="updateDerivedFeatures()" oninput="updateDerivedFeatures()">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">
+                                <i class="fas fa-user-friends"></i> Following Count
+                            </label>
+                            <input type="number" class="form-control" id="following" name="following" 
+                                   value="0" min="0" step="1" required onchange="updateDerivedFeatures()" oninput="updateDerivedFeatures()">
+                        </div>
+                    </div>
+                    
+                    <!-- Derived Features Preview -->
+                    <div id="derivedFeatures" class="derived-features">
+                        <small class="text-muted d-block mb-2">Features that will be used for prediction:</small>
+                        <div>
+                            <span class="feature-badge" id="followersFollowingRatio">Followers/Following: 0.00</span>
+                            <span class="feature-badge" id="engagementRate">Engagement Rate: 0.00%</span>
+                            <span class="feature-badge" id="postsPerDay">Posts per Day: 0.00</span>
+                            <span class="feature-badge" id="usernameDigitRatio">Username Digit Ratio: 0%</span>
+                            <span class="feature-badge" id="fullnameDigitRatio">Full Name Digit Ratio: 0%</span>
+                            <span class="feature-badge" id="bioLength">Bio Length: 0</span>
+                            <span class="feature-badge" id="nameEqualsUsername">Name Matches Username: No</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Submit Button -->
+                <div class="form-section">
+                    <button type="submit" class="btn-predict" id="predictBtn">
+                        <i class="fas fa-microchip me-2"></i>
+                        Analyze Profile with XGBoost AI
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Feature Information -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="feature-alert">
+                    <div class="d-flex align-items-start">
+                        <i class="fas fa-microchip fa-2x me-3" style="color: #dc2743;"></i>
+                        <div>
+                            <strong class="d-block mb-1">Powered by XGBoost Machine Learning Model</strong>
+                            <p class="mb-0 small text-muted">Our model analyzes 11 different features including profile settings, engagement metrics, and content patterns to provide accurate fake profile detection with 95% accuracy.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- RESULT SECTION - Shows prediction after submission -->
+        {% if prediction_result %}
+        <div class="result-card card border-0 shadow-lg" id="resultSection">
+            <div class="result-header {% if prediction_result.prediction == 'Fake' %}fake{% else %}real{% endif %}">
+                <i class="fas {% if prediction_result.prediction == 'Fake' %}fa-exclamation-triangle{% else %}fa-shield-alt{% endif %} fa-3x mb-3"></i>
+                <h2 class="fw-bold mb-2">
+                    {% if prediction_result.prediction == 'Fake' %}
+                         FAKE PROFILE DETECTED
+                    {% else %}
+                         REAL PROFILE VERIFIED
+                    {% endif %}
+                </h2>
+                <div class="result-confidence">
+                    {{ prediction_result.confidence }}% Confidence
+                </div>
+                <div class="progress-custom">
+                    <div class="progress-fill {% if prediction_result.prediction == 'Fake' %}fake{% else %}real{% endif %}" 
+                         style="width: {{ prediction_result.confidence }}%"></div>
+                </div>
+            </div>
+            <div class="result-body">
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="detail-row">
+                            <span class="detail-label"><i class="fab fa-instagram me-2"></i>Username</span>
+                            <span class="detail-value">@{{ prediction_result.username }}</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="detail-row">
+                            <span class="detail-label"><i class="fas fa-signature me-2"></i>Full Name</span>
+                            <span class="detail-value">{{ prediction_result.full_name or 'Not provided' }}</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="detail-row">
+                            <span class="detail-label"><i class="fas fa-chart-line me-2"></i>Followers</span>
+                            <span class="detail-value">{{ "{:,}".format(prediction_result.followers) }}</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="detail-row">
+                            <span class="detail-label"><i class="fas fa-user-friends me-2"></i>Following</span>
+                            <span class="detail-value">{{ "{:,}".format(prediction_result.following) }}</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="detail-row">
+                            <span class="detail-label"><i class="fas fa-image me-2"></i>Posts</span>
+                            <span class="detail-value">{{ "{:,}".format(prediction_result.posts) }}</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="detail-row">
+                            <span class="detail-label"><i class="fas fa-percent me-2"></i>Probability Real</span>
+                            <span class="detail-value text-success">{{ prediction_result.probability_real }}%</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="detail-row">
+                            <span class="detail-label"><i class="fas fa-percent me-2"></i>Probability Fake</span>
+                            <span class="detail-value text-danger">{{ prediction_result.probability_fake }}%</span>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="detail-row">
+                            <span class="detail-label"><i class="fas fa-clock me-2"></i>Analysis Time</span>
+                            <span class="detail-value">{{ prediction_result.timestamp }}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="d-flex gap-3 justify-content-center mt-3">
+                    <a href="{{ url_for('predict') }}" class="btn btn-outline-primary rounded-pill px-4">
+                        <i class="fas fa-plus-circle me-2"></i>Analyze Another
+                    </a>
+                    <a href="{{ url_for('history') }}" class="btn btn-outline-secondary rounded-pill px-4">
+                        <i class="fas fa-history me-2"></i>View History
+                    </a>
+                    <button onclick="window.location.reload()" class="btn btn-outline-success rounded-pill px-4">
+                        <i class="fas fa-edit me-2"></i>New Prediction
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay-custom" id="loadingOverlay">
+    <div class="loader">
+        <div class="loader-spinner"></div>
+        <p class="mt-3 mb-0 fw-bold">Analyzing profile with AI model...</p>
+        <small class="text-muted">This may take a few seconds</small>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // DOM Elements
+    const form = document.getElementById('predictionForm');
+    const predictBtn = document.getElementById('predictBtn');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    const bioTextarea = document.getElementById('bio');
+    const bioCounter = document.getElementById('bioCounter');
+    
+    // Derived features elements
+    let derivedFeaturesVisible = false;
+    
+    // Function to calculate derived features for better accuracy
+    function updateDerivedFeatures() {
+        const posts = parseInt(document.getElementById('posts').value) || 0;
+        const followers = parseInt(document.getElementById('followers').value) || 0;
+        const following = parseInt(document.getElementById('following').value) || 0;
+        const username = document.getElementById('username').value || '';
+        const fullName = document.getElementById('full_name').value || '';
+        const bio = document.getElementById('bio').value || '';
+        
+        // Calculate Followers/Following Ratio (avoid division by zero)
+        let followersFollowingRatio = 0;
+        if (following > 0) {
+            followersFollowingRatio = followers / following;
+        } else if (followers > 0) {
+            followersFollowingRatio = followers;
+        }
+        
+        // Calculate Engagement Rate (based on likes/comments - approximated)
+        let engagementRate = 0;
+        if (followers > 0) {
+            const estimatedAvgLikes = posts > 0 ? Math.min(followers * 0.05, 500) : 0;
+            const estimatedAvgComments = posts > 0 ? estimatedAvgLikes * 0.1 : 0;
+            engagementRate = ((estimatedAvgLikes + estimatedAvgComments) / followers) * 100;
+            engagementRate = Math.min(engagementRate, 100);
+        }
+        
+        // Calculate Posts per Day
+        let postsPerDay = 0;
+        if (posts > 0) {
+            if (posts > 1000) postsPerDay = 0.5;
+            else if (posts > 500) postsPerDay = 0.3;
+            else if (posts > 100) postsPerDay = 0.2;
+            else if (posts > 10) postsPerDay = 0.1;
+            else postsPerDay = 0.05;
+        }
+        
+        // Calculate username digit ratio
+        let usernameDigitRatio = 0;
+        if (username.length > 0) {
+            const digitCount = (username.match(/[0-9]/g) || []).length;
+            usernameDigitRatio = (digitCount / username.length) * 100;
+        }
+        
+        // Calculate fullname digit ratio
+        let fullnameDigitRatio = 0;
+        if (fullName.length > 0) {
+            const digitCount = (fullName.match(/[0-9]/g) || []).length;
+            fullnameDigitRatio = (digitCount / fullName.length) * 100;
+        }
+        
+        // Bio length
+        const bioLength = bio.length;
+        
+        // Check if name equals username (case insensitive)
+        const nameEqualsUsername = (fullName.toLowerCase().replace(/\s/g, '') === username.toLowerCase());
+        
+        // Update display
+        const followersFollowingSpan = document.getElementById('followersFollowingRatio');
+        if (followersFollowingSpan) {
+            followersFollowingSpan.textContent = `Followers/Following: ${followersFollowingRatio.toFixed(2)}`;
+        }
+        const engagementRateSpan = document.getElementById('engagementRate');
+        if (engagementRateSpan) {
+            engagementRateSpan.textContent = `Engagement Rate: ${engagementRate.toFixed(2)}%`;
+        }
+        const postsPerDaySpan = document.getElementById('postsPerDay');
+        if (postsPerDaySpan) {
+            postsPerDaySpan.textContent = `Posts per Day: ${postsPerDay.toFixed(2)}`;
+        }
+        const usernameDigitSpan = document.getElementById('usernameDigitRatio');
+        if (usernameDigitSpan) {
+            usernameDigitSpan.textContent = `Username Digit Ratio: ${usernameDigitRatio.toFixed(1)}%`;
+        }
+        const fullnameDigitSpan = document.getElementById('fullnameDigitRatio');
+        if (fullnameDigitSpan) {
+            fullnameDigitSpan.textContent = `Full Name Digit Ratio: ${fullnameDigitRatio.toFixed(1)}%`;
+        }
+        const bioLengthSpan = document.getElementById('bioLength');
+        if (bioLengthSpan) {
+            bioLengthSpan.textContent = `Bio Length: ${bioLength}`;
+        }
+        const nameEqualsSpan = document.getElementById('nameEqualsUsername');
+        if (nameEqualsSpan) {
+            nameEqualsSpan.textContent = `Name Matches Username: ${nameEqualsUsername ? 'Yes' : 'No'}`;
+        }
+        
+        // Store derived values in hidden fields for form submission
+        let derivedFields = {
+            followers_following_ratio: followersFollowingRatio,
+            engagement_rate: engagementRate / 100,
+            posts_per_day: postsPerDay,
+            username_digit_ratio: usernameDigitRatio / 100,
+            fullname_digit_ratio: fullnameDigitRatio / 100,
+            name_equals_username: nameEqualsUsername ? 1 : 0
+        };
+        
+        // Create or update hidden inputs
+        for (let [key, value] of Object.entries(derivedFields)) {
+            let input = document.querySelector(`input[name="${key}"]`);
+            if (!input) {
+                input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = key;
+                if (form) form.appendChild(input);
+            }
+            input.value = value;
+        }
+        
+        return derivedFields;
+    }
+    
+    // Toggle derived features visibility
+    function toggleDerivedFeatures() {
+        const derivedDiv = document.getElementById('derivedFeatures');
+        derivedFeaturesVisible = !derivedFeaturesVisible;
+        if (derivedFeaturesVisible) {
+            derivedDiv.classList.add('show');
+        } else {
+            derivedDiv.classList.remove('show');
+        }
+    }
+    
+    // Bio character counter
+    if (bioTextarea && bioCounter) {
+        bioTextarea.addEventListener('input', function() {
+            const count = this.value.length;
+            bioCounter.textContent = count + ' characters';
+            if (count > 150) {
+                this.value = this.value.substring(0, 150);
+                bioCounter.textContent = '150 characters (max)';
+                showToast('Bio cannot exceed 150 characters', 'error');
+            }
+            updateDerivedFeatures();
+        });
+    }
+    
+    // Form validation and submission with enhanced data
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            // Update derived features before submission
+            updateDerivedFeatures();
+            
+            // Validate username
+            const username = document.getElementById('username').value.trim();
+            if (!username) {
+                e.preventDefault();
+                showToast('Please enter an Instagram username', 'error');
+                document.getElementById('username').focus();
+                return false;
+            }
+            
+            // Validate username format
+            const usernameRegex = /^[a-zA-Z0-9_.]+$/;
+            if (!usernameRegex.test(username)) {
+                e.preventDefault();
+                showToast('Username can only contain letters, numbers, underscores, and dots', 'error');
+                document.getElementById('username').focus();
+                return false;
+            }
+            
+            // Validate numbers
+            const posts = parseInt(document.getElementById('posts').value) || 0;
+            const followers = parseInt(document.getElementById('followers').value) || 0;
+            const following = parseInt(document.getElementById('following').value) || 0;
+            
+            if (posts < 0 || followers < 0 || following < 0) {
+                e.preventDefault();
+                showToast('Values cannot be negative', 'error');
+                return false;
+            }
+            
+            // Show loading overlay
+            if (loadingOverlay) loadingOverlay.style.display = 'flex';
+            if (predictBtn) {
+                predictBtn.disabled = true;
+                predictBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Analyzing Profile...';
+            }
+            
+            return true;
+        });
+    }
+    
+    // Input validation for number fields
+    const numberInputs = document.querySelectorAll('input[type="number"]');
+    numberInputs.forEach(input => {
+        input.addEventListener('change', function() {
+            let value = parseInt(this.value) || 0;
+            const max = this.id === 'following' ? 10000 : (this.id === 'followers' ? 10000000 : 1000000);
+            if (value < 0) value = 0;
+            if (value > max) {
+                value = max;
+                showToast(`${this.previousElementSibling?.innerText || 'Value'} capped at ${max.toLocaleString()}`, 'info');
+            }
+            this.value = value;
+            updateDerivedFeatures();
+        });
+        
+        input.addEventListener('input', function() {
+            let value = parseInt(this.value) || 0;
+            if (value < 0) this.value = 0;
+            updateDerivedFeatures();
+        });
+    });
+    
+    // Username validation
+    const usernameInput = document.getElementById('username');
+    if (usernameInput) {
+        usernameInput.addEventListener('input', function() {
+            let value = this.value;
+            value = value.replace(/\s/g, '');
+            value = value.replace(/^@/, '');
+            value = value.toLowerCase();
+            this.value = value;
+            updateDerivedFeatures();
+        });
+    }
+    
+    // Full name input updates derived features
+    const fullNameInput = document.getElementById('full_name');
+    if (fullNameInput) {
+        fullNameInput.addEventListener('input', function() {
+            updateDerivedFeatures();
+        });
+    }
+    
+    // Load example data
+    function loadExampleData(type) {
+        if (type === 'fake') {
+            const usernameField = document.getElementById('username');
+            if (usernameField) usernameField.value = 'fake_user_12345';
+            const fullNameField = document.getElementById('full_name');
+            if (fullNameField) fullNameField.value = '';
+            const bioField = document.getElementById('bio');
+            if (bioField) bioField.value = '';
+            const hasProfilePic = document.getElementById('has_profile_pic');
+            if (hasProfilePic) hasProfilePic.value = '0';
+            const isPrivate = document.getElementById('is_private');
+            if (isPrivate) isPrivate.value = '1';
+            const externalUrl = document.getElementById('external_url');
+            if (externalUrl) externalUrl.value = '0';
+            const postsField = document.getElementById('posts');
+            if (postsField) postsField.value = '3';
+            const followersField = document.getElementById('followers');
+            if (followersField) followersField.value = '12';
+            const followingField = document.getElementById('following');
+            if (followingField) followingField.value = '1250';
+            showToast('Fake profile example loaded', 'info');
+        } else if (type === 'real') {
+            const usernameField = document.getElementById('username');
+            if (usernameField) usernameField.value = 'real_user';
+            const fullNameField = document.getElementById('full_name');
+            if (fullNameField) fullNameField.value = 'Real User Name';
+            const bioField = document.getElementById('bio');
+            if (bioField) bioField.value = 'This is a real Instagram profile with detailed bio. I love photography and travel!';
+            const hasProfilePic = document.getElementById('has_profile_pic');
+            if (hasProfilePic) hasProfilePic.value = '1';
+            const isPrivate = document.getElementById('is_private');
+            if (isPrivate) isPrivate.value = '0';
+            const externalUrl = document.getElementById('external_url');
+            if (externalUrl) externalUrl.value = '1';
+            const postsField = document.getElementById('posts');
+            if (postsField) postsField.value = '245';
+            const followersField = document.getElementById('followers');
+            if (followersField) followersField.value = '1250';
+            const followingField = document.getElementById('following');
+            if (followingField) followingField.value = '350';
+            showToast('Real profile example loaded', 'success');
+        }
+        
+        // Update bio counter
+        if (bioCounter && bioField) {
+            bioCounter.textContent = bioField.value.length + ' characters';
+        }
+        
+        // Update derived features
+        updateDerivedFeatures();
+    }
+    
+    // Clear form
+    function clearForm() {
+        const usernameField = document.getElementById('username');
+        if (usernameField) usernameField.value = '';
+        const fullNameField = document.getElementById('full_name');
+        if (fullNameField) fullNameField.value = '';
+        const bioField = document.getElementById('bio');
+        if (bioField) bioField.value = '';
+        const hasProfilePic = document.getElementById('has_profile_pic');
+        if (hasProfilePic) hasProfilePic.value = '0';
+        const isPrivate = document.getElementById('is_private');
+        if (isPrivate) isPrivate.value = '0';
+        const externalUrl = document.getElementById('external_url');
+        if (externalUrl) externalUrl.value = '0';
+        const postsField = document.getElementById('posts');
+        if (postsField) postsField.value = '0';
+        const followersField = document.getElementById('followers');
+        if (followersField) followersField.value = '0';
+        const followingField = document.getElementById('following');
+        if (followingField) followingField.value = '0';
+        
+        if (bioCounter) {
+            bioCounter.textContent = '0 characters';
+        }
+        
+        // Remove derived hidden inputs
+        const derivedInputs = ['followers_following_ratio', 'engagement_rate', 'posts_per_day', 
+                               'username_digit_ratio', 'fullname_digit_ratio', 'name_equals_username'];
+        derivedInputs.forEach(key => {
+            const input = document.querySelector(`input[name="${key}"]`);
+            if (input) input.remove();
+        });
+        
+        updateDerivedFeatures();
+        showToast('Form cleared', 'info');
+        if (usernameField) usernameField.focus();
+    }
+    
+    // Toast notification system
+    function showToast(message, type = 'info') {
+        const existingToasts = document.querySelectorAll('.custom-toast');
+        existingToasts.forEach(toast => toast.remove());
+        
+        const toast = document.createElement('div');
+        toast.className = `custom-toast alert alert-${type === 'success' ? 'success' : (type === 'error' ? 'danger' : 'info')} alert-dismissible fade show position-fixed bottom-0 end-0 m-3`;
+        toast.style.zIndex = '9999';
+        toast.style.background = type === 'success' ? '#56ab2f' : (type === 'error' ? '#dc2743' : '#f09433');
+        toast.style.color = 'white';
+        toast.style.borderRadius = '12px';
+        toast.style.padding = '12px 20px';
+        toast.style.boxShadow = '0 5px 20px rgba(0,0,0,0.2)';
+        toast.style.border = 'none';
+        toast.innerHTML = `
+            <i class="fas fa-${type === 'success' ? 'check-circle' : (type === 'error' ? 'exclamation-circle' : 'info-circle')} me-2"></i>
+            ${message}
+            <button type="button" class="btn-close btn-close-white ms-3" data-bs-dismiss="alert"></button>
+        `;
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            if (toast) toast.remove();
+        }, 3000);
+    }
+    
+    // Check for username parameter in URL
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const usernameParam = urlParams.get('username');
+        if (usernameParam) {
+            const usernameField = document.getElementById('username');
+            if (usernameField) {
+                usernameField.value = usernameParam;
+            }
+            updateDerivedFeatures();
+            showToast('Username filled from search', 'info');
+        }
+        
+        // Initialize derived features
+        updateDerivedFeatures();
+        
+        // Hide loading overlay if visible (for page reloads)
+        if (loadingOverlay) {
+            loadingOverlay.style.display = 'none';
+        }
+        
+        // Reset button state
+        if (predictBtn) {
+            predictBtn.disabled = false;
+            predictBtn.innerHTML = '<i class="fas fa-microchip me-2"></i> Analyze Profile with XGBoost AI';
+        }
+        
+        console.log('%c Instagram Fake Profile Detector - Analysis Page', 'color: #dc2743; font-size: 14px; font-weight: bold;');
+    });
+    
+    // Prevent double form submission
+    let isSubmitting = false;
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            if (isSubmitting) {
+                e.preventDefault();
+                return false;
+            }
+            isSubmitting = true;
+            setTimeout(() => { 
+                isSubmitting = false; 
+            }, 10000);
+        });
+    }
+</script>
+{% endblock %}

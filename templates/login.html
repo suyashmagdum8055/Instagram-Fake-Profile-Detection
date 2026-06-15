@@ -1,0 +1,585 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Instagram Fake Profile Detector{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Instagram-Inspired Color Variables */
+    :root {
+        --insta-gradient: linear-gradient(135deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+        --insta-purple: #833ab4;
+        --insta-red: #dc2743;
+        --shadow-sm: 0 5px 20px rgba(0, 0, 0, 0.08);
+        --shadow-md: 0 10px 30px rgba(0, 0, 0, 0.12);
+    }
+    
+    /* Login Container */
+    .login-container {
+        min-height: calc(100vh - 280px);
+        display: flex;
+        align-items: center;
+        padding: 40px 0;
+    }
+    
+    .login-card {
+        border-radius: 28px;
+        overflow: hidden;
+        transition: transform 0.3s, box-shadow 0.3s;
+        border: none;
+        box-shadow: var(--shadow-md);
+    }
+    
+    .login-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--shadow-sm);
+    }
+    
+    /* Form Floating Labels */
+    .floating-label-group {
+        position: relative;
+        margin-bottom: 25px;
+    }
+    
+    .floating-input {
+        width: 100%;
+        padding: 14px 16px;
+        border: 2px solid #efefef;
+        border-radius: 16px;
+        font-size: 15px;
+        transition: all 0.3s;
+        background: white;
+    }
+    
+    .floating-input:focus {
+        border-color: #dc2743;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(220, 39, 67, 0.1);
+    }
+    
+    .floating-label {
+        position: absolute;
+        left: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: white;
+        padding: 0 6px;
+        transition: all 0.3s;
+        pointer-events: none;
+        color: #8e8e8e;
+        font-size: 15px;
+    }
+    
+    .floating-input:focus ~ .floating-label,
+    .floating-input:not(:placeholder-shown) ~ .floating-label {
+        top: 0;
+        font-size: 11px;
+        color: #dc2743;
+        transform: translateY(-50%);
+    }
+    
+    /* Password Toggle */
+    .password-toggle {
+        position: absolute;
+        right: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        cursor: pointer;
+        color: #8e8e8e;
+        transition: color 0.3s;
+        z-index: 10;
+    }
+    
+    .password-toggle:hover {
+        color: #dc2743;
+    }
+    
+    /* Remember Me Checkbox */
+    .checkbox-custom {
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        user-select: none;
+    }
+    
+    .checkbox-custom input {
+        position: absolute;
+        opacity: 0;
+        cursor: pointer;
+        height: 0;
+        width: 0;
+    }
+    
+    .checkmark {
+        position: relative;
+        display: inline-block;
+        width: 18px;
+        height: 18px;
+        background-color: #fff;
+        border: 2px solid #e2e8f0;
+        border-radius: 5px;
+        margin-right: 10px;
+        transition: all 0.3s;
+    }
+    
+    .checkbox-custom:hover input ~ .checkmark {
+        border-color: #dc2743;
+    }
+    
+    .checkbox-custom input:checked ~ .checkmark {
+        background: var(--insta-gradient);
+        border-color: #dc2743;
+    }
+    
+    .checkmark:after {
+        content: "";
+        position: absolute;
+        display: none;
+    }
+    
+    .checkbox-custom input:checked ~ .checkmark:after {
+        display: block;
+    }
+    
+    .checkbox-custom .checkmark:after {
+        left: 5px;
+        top: 1px;
+        width: 5px;
+        height: 9px;
+        border: solid white;
+        border-width: 0 2px 2px 0;
+        transform: rotate(45deg);
+    }
+    
+    /* Forgot Password Link */
+    .forgot-password {
+        color: #dc2743;
+        text-decoration: none;
+        font-size: 13px;
+        transition: color 0.3s;
+    }
+    
+    .forgot-password:hover {
+        color: #bc1888;
+        text-decoration: underline;
+    }
+    
+    /* Login Options */
+    .login-options {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin: 20px 0;
+    }
+    
+    /* Loading Button */
+    .btn-loading {
+        position: relative;
+        pointer-events: none;
+        opacity: 0.8;
+    }
+    
+    .btn-loading .btn-text {
+        visibility: hidden;
+    }
+    
+    .btn-loading:after {
+        content: "";
+        position: absolute;
+        width: 18px;
+        height: 18px;
+        top: 50%;
+        left: 50%;
+        margin-left: -9px;
+        margin-top: -9px;
+        border: 2px solid #fff;
+        border-radius: 50%;
+        border-top-color: transparent;
+        animation: spinner 0.6s linear infinite;
+    }
+    
+    @keyframes spinner {
+        to { transform: rotate(360deg); }
+    }
+    
+    /* Rate limiting message */
+    .rate-limit-message {
+        font-size: 12px;
+        margin-top: 10px;
+        text-align: center;
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+        .login-options {
+            flex-direction: column;
+            gap: 15px;
+            align-items: flex-start;
+        }
+        
+        .floating-input {
+            font-size: 14px;
+            padding: 12px 14px;
+        }
+        
+        .login-container {
+            padding: 20px 0;
+        }
+    }
+    
+    /* Animation */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .animate-form {
+        animation: fadeInUp 0.6s ease forwards;
+        opacity: 0;
+        animation-fill-mode: forwards;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="login-container">
+    <div class="row justify-content-center w-100">
+        <div class="col-md-6 col-lg-5">
+            <div class="card login-card animate-form">
+                <div class="card-body p-4 p-md-5">
+                    <!-- Header -->
+                    <div class="text-center mb-4">
+                        <div class="mb-3">
+                            <i class="fab fa-instagram fa-4x" style="background: var(--insta-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
+                        </div>
+                        <h2 class="mb-2 fw-bold" style="color: #262626;">Welcome Back</h2>
+                        <p class="text-muted small">Sign in to continue to your account</p>
+                    </div>
+                    
+                    <!-- Login Form -->
+                    <form method="POST" action="{{ url_for('login') }}" id="loginForm">
+                        <!-- Username -->
+                        <div class="floating-label-group">
+                            <input type="text" 
+                                   class="floating-input" 
+                                   id="username" 
+                                   name="username" 
+                                   placeholder=" " 
+                                   required 
+                                   autocomplete="username">
+                            <label for="username" class="floating-label">
+                                <i class="fas fa-user me-2"></i>Username or Email
+                            </label>
+                        </div>
+                        
+                        <!-- Password -->
+                        <div class="floating-label-group">
+                            <input type="password" 
+                                   class="floating-input" 
+                                   id="password" 
+                                   name="password" 
+                                   placeholder=" " 
+                                   required 
+                                   autocomplete="current-password">
+                            <label for="password" class="floating-label">
+                                <i class="fas fa-lock me-2"></i>Password
+                            </label>
+                            <span class="password-toggle" id="togglePassword">
+                                <i class="far fa-eye"></i>
+                            </span>
+                        </div>
+                        
+                        <!-- Login Options -->
+                        <div class="login-options">
+                            <label class="checkbox-custom">
+                                <input type="checkbox" name="remember" id="remember">
+                                <span class="checkmark"></span>
+                                <span class="text-muted small">Remember me</span>
+                            </label>
+                            <a href="#" class="forgot-password" data-bs-toggle="modal" data-bs-target="#forgotPasswordModal">
+                                <i class="fas fa-key me-1"></i>Forgot Password?
+                            </a>
+                        </div>
+                        
+                        <!-- Login Button -->
+                        <button type="submit" class="btn btn-primary w-100 py-3" id="loginBtn" style="background: var(--insta-gradient); border: none; border-radius: 50px; font-weight: 600;">
+                            <span class="btn-text">Sign In</span>
+                            <i class="fas fa-arrow-right ms-2"></i>
+                        </button>
+                        
+                        <!-- Rate limit message -->
+                        <div class="rate-limit-message text-muted">
+                            <i class="fas fa-shield-alt me-1"></i>
+                            Too many failed attempts? Your account will be temporarily locked.
+                        </div>
+                    </form>
+                    
+                    <!-- Sign Up Link -->
+                    <div class="text-center mt-4">
+                        <p class="mb-0 text-muted small">
+                            Don't have an account? 
+                            <a href="{{ url_for('signup') }}" class="fw-bold text-decoration-none" style="color: #dc2743;">
+                                Create one <i class="fas fa-arrow-right ms-1"></i>
+                            </a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Forgot Password Modal -->
+<div class="modal fade" id="forgotPasswordModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 20px;">
+            <div class="modal-header" style="background: var(--insta-gradient); color: white; border: none;">
+                <h5 class="modal-title">Reset Password</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Enter your email address and we'll send you a link to reset your password.</p>
+                <div class="mb-3">
+                    <label for="resetEmail" class="form-label">Email Address</label>
+                    <input type="email" class="form-control" id="resetEmail" placeholder="Enter your email" style="border-radius: 12px; border: 2px solid #efefef;">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="border-radius: 50px;">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="sendResetLink()" style="background: var(--insta-gradient); border: none; border-radius: 50px;">Send Reset Link</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast for Notifications -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1100;">
+    <div id="loginToast" class="toast" role="alert" style="border-radius: 12px; border: none;">
+        <div class="toast-header" style="border-bottom: none;">
+            <i class="fas fa-bell me-2"></i>
+            <strong class="me-auto">Notification</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+        </div>
+        <div class="toast-body"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let failedAttempts = 0;
+    const MAX_FAILED_ATTEMPTS = 5;
+    let lockoutTime = null;
+    
+    // Toggle password visibility
+    const togglePassword = document.getElementById('togglePassword');
+    const passwordInput = document.getElementById('password');
+    
+    if (togglePassword && passwordInput) {
+        togglePassword.addEventListener('click', function() {
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            this.querySelector('i').classList.toggle('fa-eye');
+            this.querySelector('i').classList.toggle('fa-eye-slash');
+        });
+    }
+    
+    // Show toast notification
+    function showToast(message, type = 'info') {
+        const toastElement = document.getElementById('loginToast');
+        const toast = new bootstrap.Toast(toastElement);
+        const toastBody = document.querySelector('#loginToast .toast-body');
+        const toastHeader = document.querySelector('#loginToast .toast-header');
+        
+        toastBody.textContent = message;
+        
+        if (type === 'error') {
+            toastHeader.style.backgroundColor = '#dc2743';
+            toastHeader.style.color = 'white';
+            toastElement.style.backgroundColor = '#dc2743';
+        } else if (type === 'success') {
+            toastHeader.style.backgroundColor = '#56ab2f';
+            toastHeader.style.color = 'white';
+            toastElement.style.backgroundColor = '#56ab2f';
+        } else {
+            toastHeader.style.backgroundColor = '#f09433';
+            toastHeader.style.color = 'white';
+            toastElement.style.backgroundColor = '#f09433';
+        }
+        
+        toast.show();
+        
+        // Reset header color after toast hides
+        setTimeout(() => {
+            toastHeader.style.backgroundColor = '';
+            toastHeader.style.color = '';
+            toastElement.style.backgroundColor = '';
+        }, 3000);
+    }
+    
+    // Check if account is locked
+    function isAccountLocked() {
+        if (lockoutTime && new Date() < lockoutTime) {
+            const remainingMinutes = Math.ceil((lockoutTime - new Date()) / 60000);
+            showToast(`Account temporarily locked. Try again in ${remainingMinutes} minutes.`, 'error');
+            return true;
+        }
+        return false;
+    }
+    
+    // Track failed login attempts
+    function trackFailedAttempt() {
+        failedAttempts++;
+        if (failedAttempts >= MAX_FAILED_ATTEMPTS) {
+            // Lock account for 15 minutes
+            lockoutTime = new Date(new Date().getTime() + 15 * 60000);
+            showToast('Too many failed attempts. Account locked for 15 minutes.', 'error');
+            document.getElementById('loginBtn').disabled = true;
+            
+            // Re-enable after lockout period
+            setTimeout(() => {
+                lockoutTime = null;
+                failedAttempts = 0;
+                document.getElementById('loginBtn').disabled = false;
+                showToast('Account unlocked. You can try logging in again.', 'success');
+            }, 15 * 60000);
+        } else {
+            const remaining = MAX_FAILED_ATTEMPTS - failedAttempts;
+            showToast(`Invalid credentials. ${remaining} attempt${remaining > 1 ? 's' : ''} remaining before lockout.`, 'error');
+        }
+    }
+    
+    // Reset failed attempts on successful login (call this from server response)
+    function resetFailedAttempts() {
+        failedAttempts = 0;
+        lockoutTime = null;
+    }
+    
+    // Form validation and submission
+    const loginForm = document.getElementById('loginForm');
+    const loginBtn = document.getElementById('loginBtn');
+    
+    if (loginForm) {
+        loginForm.addEventListener('submit', function(e) {
+            // Check if account is locked
+            if (isAccountLocked()) {
+                e.preventDefault();
+                return false;
+            }
+            
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            
+            if (!username) {
+                e.preventDefault();
+                showToast('Please enter your username or email', 'error');
+                document.getElementById('username').focus();
+                return false;
+            }
+            
+            if (!password) {
+                e.preventDefault();
+                showToast('Please enter your password', 'error');
+                document.getElementById('password').focus();
+                return false;
+            }
+            
+            // Show loading state
+            loginBtn.classList.add('btn-loading');
+            loginBtn.disabled = true;
+            
+            // Note: In production, track failed attempts on the server side
+            // This client-side tracking is just for UI feedback
+        });
+    }
+    
+    // Send reset password link
+    function sendResetLink() {
+        const email = document.getElementById('resetEmail').value.trim();
+        
+        if (!email) {
+            showToast('Please enter your email address', 'error');
+            return;
+        }
+        
+        const emailRegex = /^[^\s@]+@([^\s@]+\.)+[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            showToast('Please enter a valid email address', 'error');
+            return;
+        }
+        
+        // In production, send actual password reset email
+        showToast('If an account exists with this email, you will receive a password reset link.', 'success');
+        
+        const modal = bootstrap.Modal.getInstance(document.getElementById('forgotPasswordModal'));
+        if (modal) {
+            modal.hide();
+        }
+        document.getElementById('resetEmail').value = '';
+    }
+    
+    // Enter key to submit
+    document.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter' && loginForm && !isAccountLocked()) {
+            const activeElement = document.activeElement;
+            if (activeElement && (activeElement.id === 'username' || activeElement.id === 'password')) {
+                e.preventDefault();
+                loginForm.dispatchEvent(new Event('submit'));
+            }
+        }
+    });
+    
+    // Check for saved username (optional convenience - not for sensitive data)
+    const savedUsername = localStorage.getItem('savedUsername');
+    if (savedUsername && savedUsername !== 'undefined') {
+        const usernameField = document.getElementById('username');
+        if (usernameField && !usernameField.value) {
+            usernameField.value = savedUsername;
+            usernameField.dispatchEvent(new Event('input'));
+            
+            const rememberCheckbox = document.getElementById('remember');
+            if (rememberCheckbox) {
+                rememberCheckbox.checked = true;
+            }
+        }
+    }
+    
+    // Save username if remember me is checked
+    const rememberCheckbox = document.getElementById('remember');
+    if (rememberCheckbox) {
+        rememberCheckbox.addEventListener('change', function() {
+            const username = document.getElementById('username').value.trim();
+            if (this.checked && username) {
+                localStorage.setItem('savedUsername', username);
+            } else {
+                localStorage.removeItem('savedUsername');
+            }
+        });
+    }
+    
+    // Add floating label effect for inputs with values
+    document.querySelectorAll('.floating-input').forEach(input => {
+        if (input.value) {
+            input.dispatchEvent(new Event('input'));
+        }
+    });
+    
+    // Display flash messages from server
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                showToast('{{ message }}', '{{ category }}');
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    // Console greeting
+    console.log('%c Instagram Fake Profile Detector - Login', 'color: #dc2743; font-size: 14px; font-weight: bold;');
+    console.log('%c Secure Login | XGBoost Model Integration', 'color: #f09433; font-size: 12px;');
+</script>
+{% endblock %}

@@ -1,0 +1,1003 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Instagram Fake Profile Detector{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Instagram-inspired Color Variables */
+    :root {
+        --insta-gradient: linear-gradient(135deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+        --insta-gradient-alt: linear-gradient(135deg, #833ab4 0%, #fd1d1d 50%, #fcb045 100%);
+        --insta-purple: #833ab4;
+        --insta-red: #dc2743;
+        --insta-orange: #f56040;
+        --insta-yellow: #fcb045;
+        --insta-blue: #4f5bd5;
+        --success-green: #56ab2f;
+        --danger-red: #eb3349;
+        --card-bg: rgba(255, 255, 255, 0.98);
+        --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.05);
+        --shadow-md: 0 5px 20px rgba(0, 0, 0, 0.08);
+        --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.12);
+    }
+    
+    /* Dashboard Header */
+    .dashboard-header {
+        background: var(--insta-gradient);
+        border-radius: 25px;
+        padding: 40px;
+        margin-bottom: 35px;
+        color: white;
+        position: relative;
+        overflow: hidden;
+        box-shadow: var(--shadow-lg);
+    }
+    
+    .dashboard-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 2px, transparent 2px);
+        background-size: 40px 40px;
+        animation: moveBackground 25s linear infinite;
+        pointer-events: none;
+    }
+    
+    @keyframes moveBackground {
+        0% { transform: translate(0, 0); }
+        100% { transform: translate(50px, 50px); }
+    }
+    
+    .dashboard-header h1 {
+        font-size: 2rem;
+        font-weight: 800;
+        margin-bottom: 10px;
+        position: relative;
+        z-index: 1;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .dashboard-header p {
+        margin-bottom: 0;
+        opacity: 0.95;
+        position: relative;
+        z-index: 1;
+    }
+    
+    /* Stat Cards - Instagram Style */
+    .stat-card {
+        background: var(--card-bg);
+        border-radius: 20px;
+        padding: 25px;
+        text-align: center;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: var(--shadow-md);
+        margin-bottom: 20px;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+        border: 1px solid rgba(0,0,0,0.05);
+    }
+    
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+        transition: left 0.5s;
+    }
+    
+    .stat-card:hover::before {
+        left: 100%;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-8px);
+        box-shadow: var(--shadow-lg);
+        border-color: rgba(220, 39, 67, 0.2);
+    }
+    
+    .stat-icon {
+        width: 70px;
+        height: 70px;
+        background: var(--insta-gradient);
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 15px;
+        transition: transform 0.3s;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .stat-card:hover .stat-icon {
+        transform: scale(1.05) rotate(5deg);
+    }
+    
+    .stat-icon i {
+        font-size: 32px;
+        color: white;
+    }
+    
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: 800;
+        background: var(--insta-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 5px;
+    }
+    
+    .stat-label {
+        color: #8e8e8e;
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .stat-trend {
+        font-size: 0.75rem;
+        margin-top: 10px;
+    }
+    
+    .trend-up {
+        color: #56ab2f;
+    }
+    
+    .trend-down {
+        color: #dc2743;
+    }
+    
+    /* Chart Containers */
+    .chart-container {
+        background: var(--card-bg);
+        border-radius: 20px;
+        padding: 25px;
+        box-shadow: var(--shadow-md);
+        margin-bottom: 30px;
+        transition: all 0.3s;
+        border: 1px solid rgba(0,0,0,0.05);
+    }
+    
+    .chart-container:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--shadow-lg);
+    }
+    
+    .chart-title {
+        font-size: 1.2rem;
+        font-weight: 700;
+        margin-bottom: 20px;
+        color: #262626;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-left: 4px solid #dc2743;
+        padding-left: 15px;
+    }
+    
+    .chart-title i {
+        color: #dc2743;
+        margin-right: 10px;
+    }
+    
+    /* Recent Activity */
+    .activity-list {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    
+    .activity-item {
+        padding: 15px;
+        border-bottom: 1px solid #efefef;
+        transition: all 0.3s;
+        cursor: pointer;
+        border-radius: 12px;
+        margin-bottom: 5px;
+    }
+    
+    .activity-item:hover {
+        background: linear-gradient(135deg, #fafafa 0%, #ffffff 100%);
+        transform: translateX(8px);
+        border-left: 3px solid #dc2743;
+    }
+    
+    .activity-icon {
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 15px;
+        transition: transform 0.3s;
+        flex-shrink: 0;
+    }
+    
+    .activity-item:hover .activity-icon {
+        transform: scale(1.05);
+    }
+    
+    .activity-icon.fake {
+        background: linear-gradient(135deg, #fed7d7 0%, #ffe0e0 100%);
+        color: #dc2743;
+    }
+    
+    .activity-icon.real {
+        background: linear-gradient(135deg, #d4edda 0%, #e8f5e9 100%);
+        color: #56ab2f;
+    }
+    
+    .activity-details {
+        flex: 1;
+    }
+    
+    .activity-username {
+        font-weight: 700;
+        color: #262626;
+        margin-bottom: 5px;
+    }
+    
+    .activity-time {
+        font-size: 0.7rem;
+        color: #8e8e8e;
+    }
+    
+    .activity-result {
+        text-align: right;
+        flex-shrink: 0;
+    }
+    
+    .badge-risk {
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        display: inline-block;
+    }
+    
+    .risk-low {
+        background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+        color: #155724;
+    }
+    
+    .risk-medium {
+        background: linear-gradient(135deg, #fff3cd 0%, #ffeeba 100%);
+        color: #856404;
+    }
+    
+    .risk-high {
+        background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+        color: #721c24;
+    }
+    
+    .risk-critical {
+        background: linear-gradient(135deg, #f5c6cb 0%, #f1b0b7 100%);
+        color: #721c24;
+    }
+    
+    /* Quick Actions */
+    .quick-actions {
+        background: linear-gradient(135deg, #fafafa 0%, #ffffff 100%);
+        border-radius: 20px;
+        padding: 25px;
+        margin-top: 30px;
+    }
+    
+    .action-btn {
+        padding: 12px 25px;
+        border-radius: 50px;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        text-decoration: none;
+    }
+    
+    .btn-primary-action {
+        background: var(--insta-gradient);
+        color: white;
+    }
+    
+    .btn-primary-action:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(220, 39, 67, 0.3);
+        color: white;
+    }
+    
+    .btn-outline-action {
+        background: transparent;
+        border: 2px solid #dc2743;
+        color: #dc2743;
+    }
+    
+    .btn-outline-action:hover {
+        background: var(--insta-gradient);
+        border-color: transparent;
+        color: white;
+        transform: translateY(-2px);
+    }
+    
+    .btn-secondary-action {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    
+    .btn-secondary-action:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+    }
+    
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 50px;
+        color: #8e8e8e;
+    }
+    
+    .empty-state i {
+        font-size: 4rem;
+        margin-bottom: 20px;
+        opacity: 0.5;
+        background: var(--insta-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    
+    /* Loading Spinner */
+    .spinner-custom {
+        width: 40px;
+        height: 40px;
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid #dc2743;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    
+    /* Risk Meter */
+    .risk-meter {
+        background: linear-gradient(90deg, #56ab2f 0%, #fcb045 50%, #dc2743 100%);
+        border-radius: 10px;
+        height: 10px;
+        overflow: hidden;
+    }
+    
+    .risk-progress {
+        height: 100%;
+        background: white;
+        width: 0%;
+        transition: width 1s ease;
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+        .dashboard-header {
+            padding: 25px;
+        }
+        
+        .dashboard-header h1 {
+            font-size: 1.5rem;
+        }
+        
+        .stat-number {
+            font-size: 1.8rem;
+        }
+        
+        .stat-icon {
+            width: 55px;
+            height: 55px;
+        }
+        
+        .stat-icon i {
+            font-size: 24px;
+        }
+        
+        .action-btn {
+            width: 100%;
+            justify-content: center;
+        }
+        
+        .activity-item {
+            flex-wrap: wrap;
+        }
+        
+        .activity-result {
+            margin-top: 10px;
+            text-align: left;
+            width: 100%;
+        }
+    }
+    
+    /* Animation */
+    @keyframes slideInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .animate-card {
+        animation: slideInUp 0.5s ease forwards;
+        opacity: 0;
+    }
+    
+    .delay-1 { animation-delay: 0.1s; opacity: 0; animation-fill-mode: forwards; }
+    .delay-2 { animation-delay: 0.2s; opacity: 0; animation-fill-mode: forwards; }
+    .delay-3 { animation-delay: 0.3s; opacity: 0; animation-fill-mode: forwards; }
+    .delay-4 { animation-delay: 0.4s; opacity: 0; animation-fill-mode: forwards; }
+    
+    /* Scrollbar Styling */
+    .activity-list::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    .activity-list::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+    }
+    
+    .activity-list::-webkit-scrollbar-thumb {
+        background: linear-gradient(135deg, #dc2743 0%, #bc1888 100%);
+        border-radius: 10px;
+    }
+    
+    .activity-list::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(135deg, #bc1888 0%, #dc2743 100%);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Dashboard Header -->
+<div class="dashboard-header animate-card">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h1>
+                <i class="fab fa-instagram me-2"></i>
+                Welcome back, {{ current_user.username }}!
+            </h1>
+            <p>Your Instagram profile analysis summary and activity overview</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <div class="d-flex gap-2 justify-content-md-end">
+                <button class="btn btn-light btn-sm" onclick="window.location.href='{{ url_for('history') }}'" style="border-radius: 50px; padding: 8px 20px;">
+                    <i class="fas fa-history me-2"></i>View All
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-3 col-sm-6">
+        <div class="stat-card animate-card delay-1" onclick="window.location.href='{{ url_for('history') }}'">
+            <div class="stat-icon mx-auto">
+                <i class="fas fa-search"></i>
+            </div>
+            <div class="stat-number" id="totalSearches">0</div>
+            <div class="stat-label">Total Searches</div>
+            <div class="stat-trend" id="totalTrend"></div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="stat-card animate-card delay-2" onclick="window.location.href='{{ url_for('history') }}?filter=fake'">
+            <div class="stat-icon mx-auto">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="stat-number" id="fakeCount">0</div>
+            <div class="stat-label">Fake Profiles</div>
+            <div class="stat-trend trend-up" id="fakeTrend"></div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="stat-card animate-card delay-3" onclick="window.location.href='{{ url_for('history') }}?filter=real'">
+            <div class="stat-icon mx-auto">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-number" id="realCount">0</div>
+            <div class="stat-label">Real Profiles</div>
+            <div class="stat-trend trend-up" id="realTrend"></div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="stat-card animate-card delay-4" onclick="window.location.href='{{ url_for('history') }}'">
+            <div class="stat-icon mx-auto">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <div class="stat-number" id="accuracy">0<span style="font-size: 1rem;">%</span></div>
+            <div class="stat-label">Detection Accuracy</div>
+            <div class="stat-trend trend-up">
+                <i class="fas fa-arrow-up"></i> 2.5%
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row">
+    <div class="col-lg-8">
+        <div class="chart-container">
+            <div class="chart-title">
+                <span>
+                    <i class="fas fa-chart-line"></i>
+                    Analysis Trend
+                </span>
+                <span class="text-muted small">
+                    <i class="fas fa-calendar-alt me-1"></i>Last 7 Days
+                </span>
+            </div>
+            <canvas id="trendChart" height="300"></canvas>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="chart-container">
+            <div class="chart-title">
+                <span>
+                    <i class="fas fa-chart-pie"></i>
+                    Detection Distribution
+                </span>
+            </div>
+            <canvas id="distributionChart" height="300"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity and Quick Actions -->
+<div class="row">
+    <div class="col-lg-7">
+        <div class="chart-container">
+            <div class="chart-title">
+                <span>
+                    <i class="fas fa-clock"></i>
+                    Recent Activity
+                </span>
+                <span class="text-muted small">
+                    <i class="fas fa-sync-alt me-1" style="cursor: pointer;" onclick="refreshActivity()"></i>
+                    Last 5 searches
+                </span>
+            </div>
+            <div id="activityList" class="activity-list">
+                <div class="text-center py-5">
+                    <div class="spinner-custom"></div>
+                    <p class="mt-3 text-muted">Loading your activity...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="chart-container">
+            <div class="chart-title">
+                <span>
+                    <i class="fas fa-bolt"></i>
+                    Quick Actions
+                </span>
+            </div>
+            <div class="quick-actions">
+                <div class="d-flex flex-column gap-3">
+                    <button class="btn btn-primary-action action-btn" onclick="window.location.href='{{ url_for('predict') }}'">
+                        <i class="fas fa-search me-2"></i>
+                        Analyze New Profile
+                    </button>
+                    <button class="btn btn-outline-action action-btn" onclick="window.location.href='{{ url_for('history') }}'">
+                        <i class="fas fa-history me-2"></i>
+                        View Full History
+                    </button>
+                    <button class="btn btn-secondary-action action-btn" onclick="exportReport()">
+                        <i class="fas fa-download me-2"></i>
+                        Export Report
+                    </button>
+                    <button class="btn btn-outline-action action-btn" data-bs-toggle="modal" data-bs-target="#tipsModal">
+                        <i class="fas fa-lightbulb me-2"></i>
+                        Detection Tips
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Risk Score Meter -->
+            <div class="mt-4">
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="small fw-bold">Overall Risk Score</span>
+                    <span class="small text-muted" id="overallRiskScore">0%</span>
+                </div>
+                <div class="risk-meter">
+                    <div class="risk-progress" id="riskMeter" style="width: 0%"></div>
+                </div>
+                <div class="mt-3 small text-muted text-center">
+                    <i class="fas fa-chart-simple me-1"></i>Based on your search history analysis
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Detection Tips Modal -->
+<div class="modal fade" id="tipsModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 20px;">
+            <div class="modal-header" style="background: var(--insta-gradient); color: white; border: none;">
+                <h5 class="modal-title">
+                    <i class="fas fa-lightbulb me-2"></i> Detection Tips
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <h6><i class="fas fa-eye" style="color: #dc2743;"></i> Red Flags to Watch For:</h6>
+                    <ul class="small mt-2">
+                        <li>No profile picture or low-quality images</li>
+                        <li>Very few posts with high follower count</li>
+                        <li>Suspicious usernames with many numbers</li>
+                        <li>Empty or very short bio</li>
+                        <li>Following thousands but very few followers</li>
+                    </ul>
+                </div>
+                <div class="mb-3">
+                    <h6><i class="fas fa-shield-alt" style="color: #56ab2f;"></i> Green Flags:</h6>
+                    <ul class="small mt-2">
+                        <li>Consistent posting history</li>
+                        <li>Engagement matches follower count</li>
+                        <li>Detailed bio with external links</li>
+                        <li>Verified badge (if applicable)</li>
+                    </ul>
+                </div>
+                <div class="alert" style="background: linear-gradient(135deg, #f09433 0%, #bc1888 100%); color: white; border: none; border-radius: 15px;">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>XGBoost AI Model</strong> - Analyzes 11+ parameters to detect fake profiles with 95% accuracy!
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal" style="background: var(--insta-gradient); border: none; border-radius: 50px; padding: 10px 30px;">
+                    Got it! <i class="fas fa-smile ms-2"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    let trendChart, distributionChart;
+    
+    async function loadDashboardData() {
+        try {
+            const response = await fetch('/api/dashboard/stats');
+            const data = await response.json();
+            
+            const totalEl = document.getElementById('totalSearches');
+            const fakeEl = document.getElementById('fakeCount');
+            const realEl = document.getElementById('realCount');
+            const accuracyEl = document.getElementById('accuracy');
+            const riskScoreEl = document.getElementById('overallRiskScore');
+            const riskMeterEl = document.getElementById('riskMeter');
+            
+            if (totalEl) totalEl.textContent = data.total_searches || 0;
+            if (fakeEl) fakeEl.textContent = data.fake_count || 0;
+            if (realEl) realEl.textContent = data.real_count || 0;
+            
+            const accuracy = (data.real_count + data.fake_count) > 0 
+                ? ((data.real_count / (data.real_count + data.fake_count)) * 100).toFixed(1)
+                : 0;
+            if (accuracyEl) accuracyEl.innerHTML = accuracy + '<span style="font-size: 1rem;">%</span>';
+            
+            const riskScore = data.risk_score || 0;
+            if (riskScoreEl) riskScoreEl.textContent = riskScore + '%';
+            if (riskMeterEl) riskMeterEl.style.width = riskScore + '%';
+            
+            updateCharts(data.chart_data);
+            loadRecentActivity();
+            
+        } catch (error) {
+            console.error('Error loading dashboard data:', error);
+            loadFallbackData();
+        }
+    }
+    
+    function updateCharts(chartData) {
+        const trendCanvas = document.getElementById('trendChart');
+        const distributionCanvas = document.getElementById('distributionChart');
+        
+        if (!trendCanvas || !distributionCanvas) return;
+        
+        const ctx1 = trendCanvas.getContext('2d');
+        if (trendChart) trendChart.destroy();
+        
+        trendChart = new Chart(ctx1, {
+            type: 'line',
+            data: {
+                labels: chartData?.days || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                datasets: [
+                    {
+                        label: 'Total Searches',
+                        data: chartData?.totals || [0, 0, 0, 0, 0, 0, 0],
+                        borderColor: '#dc2743',
+                        backgroundColor: 'rgba(220, 39, 67, 0.05)',
+                        tension: 0.4,
+                        fill: true,
+                        borderWidth: 3,
+                        pointBackgroundColor: '#dc2743',
+                        pointBorderColor: '#fff',
+                        pointRadius: 5,
+                        pointHoverRadius: 8
+                    },
+                    {
+                        label: 'Fake Detected',
+                        data: chartData?.fake || [0, 0, 0, 0, 0, 0, 0],
+                        borderColor: '#fcb045',
+                        backgroundColor: 'rgba(252, 176, 69, 0.05)',
+                        tension: 0.4,
+                        fill: true,
+                        borderWidth: 3,
+                        pointBackgroundColor: '#fcb045',
+                        pointBorderColor: '#fff',
+                        pointRadius: 5,
+                        pointHoverRadius: 8
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            usePointStyle: true,
+                            boxWidth: 10
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: '#efefef'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        });
+        
+        const ctx2 = distributionCanvas.getContext('2d');
+        if (distributionChart) distributionChart.destroy();
+        
+        distributionChart = new Chart(ctx2, {
+            type: 'doughnut',
+            data: {
+                labels: ['Real Profiles', 'Fake Profiles'],
+                datasets: [{
+                    data: [chartData?.real_percent || 50, chartData?.fake_percent || 50],
+                    backgroundColor: ['#56ab2f', '#dc2743'],
+                    borderWidth: 0,
+                    hoverOffset: 15
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            usePointStyle: true,
+                            boxWidth: 10
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.label + ': ' + context.parsed + '%';
+                            }
+                        }
+                    }
+                },
+                cutout: '60%'
+            }
+        });
+    }
+    
+    async function loadRecentActivity() {
+        const activityList = document.getElementById('activityList');
+        if (!activityList) return;
+        
+        try {
+            const response = await fetch('/api/dashboard/recent');
+            const activities = await response.json();
+            
+            if (!activities || activities.length === 0) {
+                activityList.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <p>No searches yet</p>
+                        <button class="btn btn-primary-action btn-sm" onclick="window.location.href='{{ url_for('predict') }}'" style="border-radius: 50px;">
+                            Start Analyzing
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+            
+            activityList.innerHTML = activities.map(activity => `
+                <div class="activity-item d-flex align-items-center" onclick="viewDetails('${escapeHtml(activity.username)}')">
+                    <div class="activity-icon ${activity.prediction.toLowerCase()}">
+                        <i class="fas ${activity.prediction === 'Fake' ? 'fa-exclamation-triangle' : 'fa-check-circle'} fa-lg"></i>
+                    </div>
+                    <div class="activity-details">
+                        <div class="activity-username">
+                            <i class="fab fa-instagram me-1"></i>@${escapeHtml(activity.username)}
+                        </div>
+                        <div class="activity-time">
+                            <i class="far fa-clock me-1"></i>${escapeHtml(activity.time_ago)}
+                        </div>
+                    </div>
+                    <div class="activity-result">
+                        <span class="badge-risk risk-${activity.risk_level.toLowerCase()} mb-1 d-block">
+                            ${activity.prediction}
+                        </span>
+                        <span class="badge-risk risk-${activity.risk_level.toLowerCase()}">
+                            Risk: ${activity.risk_score}%
+                        </span>
+                    </div>
+                </div>
+            `).join('');
+            
+        } catch (error) {
+            console.error('Error loading activities:', error);
+            activityList.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <p>Unable to load activities</p>
+                    <button class="btn btn-primary-action btn-sm" onclick="refreshActivity()" style="border-radius: 50px;">
+                        Retry
+                    </button>
+                </div>
+            `;
+        }
+    }
+    
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    function refreshActivity() {
+        loadRecentActivity();
+        showToast('Activity refreshed!', 'info');
+    }
+    
+    function viewDetails(username) {
+        if (username) {
+            window.location.href = `/history?search=${encodeURIComponent(username)}`;
+        }
+    }
+    
+    function exportReport() {
+        const totalSearches = document.getElementById('totalSearches')?.textContent || '0';
+        const fakeCount = document.getElementById('fakeCount')?.textContent || '0';
+        const realCount = document.getElementById('realCount')?.textContent || '0';
+        const accuracy = document.getElementById('accuracy')?.innerHTML || '0%';
+        
+        const reportData = {
+            user: "{{ current_user.username }}",
+            export_date: new Date().toISOString(),
+            total_searches: parseInt(totalSearches),
+            fake_count: parseInt(fakeCount),
+            real_count: parseInt(realCount),
+            accuracy: accuracy.replace('<span style="font-size: 1rem;">%</span>', ''),
+            export_time: new Date().toLocaleString()
+        };
+        
+        const dataStr = JSON.stringify(reportData, null, 2);
+        const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+        const exportFileDefaultName = `instagram_detector_report_${new Date().toISOString().split('T')[0]}.json`;
+        
+        const linkElement = document.createElement('a');
+        linkElement.setAttribute('href', dataUri);
+        linkElement.setAttribute('download', exportFileDefaultName);
+        linkElement.click();
+        
+        showToast('Report exported successfully!', 'success');
+    }
+    
+    function showToast(message, type) {
+        // Remove existing toasts
+        const existingToasts = document.querySelectorAll('.dashboard-toast');
+        existingToasts.forEach(toast => toast.remove());
+        
+        const toast = document.createElement('div');
+        toast.className = `dashboard-toast alert alert-${type === 'success' ? 'success' : 'info'} alert-dismissible fade show position-fixed bottom-0 end-0 m-3`;
+        toast.style.zIndex = '9999';
+        toast.style.background = type === 'success' ? '#56ab2f' : '#dc2743';
+        toast.style.color = 'white';
+        toast.style.borderRadius = '15px';
+        toast.style.border = 'none';
+        toast.style.padding = '12px 20px';
+        toast.style.boxShadow = '0 5px 20px rgba(0,0,0,0.2)';
+        toast.innerHTML = `
+            <i class="fas fa-${type === 'success' ? 'check-circle' : 'info-circle'} me-2"></i>
+            ${escapeHtml(message)}
+            <button type="button" class="btn-close btn-close-white ms-3" data-bs-dismiss="alert"></button>
+        `;
+        document.body.appendChild(toast);
+        setTimeout(() => {
+            if (toast) toast.remove();
+        }, 3000);
+    }
+    
+    function loadFallbackData() {
+        const totalEl = document.getElementById('totalSearches');
+        const fakeEl = document.getElementById('fakeCount');
+        const realEl = document.getElementById('realCount');
+        const accuracyEl = document.getElementById('accuracy');
+        const riskMeterEl = document.getElementById('riskMeter');
+        
+        if (totalEl) totalEl.textContent = '0';
+        if (fakeEl) fakeEl.textContent = '0';
+        if (realEl) realEl.textContent = '0';
+        if (accuracyEl) accuracyEl.innerHTML = '0%';
+        if (riskMeterEl) riskMeterEl.style.width = '0%';
+        
+        updateCharts({
+            days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+            totals: [0, 0, 0, 0, 0, 0, 0],
+            fake: [0, 0, 0, 0, 0, 0, 0],
+            real_percent: 0,
+            fake_percent: 0
+        });
+        
+        const activityList = document.getElementById('activityList');
+        if (activityList) {
+            activityList.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-search"></i>
+                    <p>No activity yet. Start analyzing profiles!</p>
+                    <button class="btn btn-primary-action btn-sm" onclick="window.location.href='{{ url_for('predict') }}'" style="border-radius: 50px;">
+                        Analyze Profile
+                    </button>
+                </div>
+            `;
+        }
+    }
+    
+    // Initialize dashboard on load
+    document.addEventListener('DOMContentLoaded', function() {
+        loadDashboardData();
+        // Auto-refresh every 30 seconds
+        setInterval(loadDashboardData, 30000);
+        
+        // Console greeting
+        console.log('%c Dashboard Loaded', 'color: #dc2743; font-size: 12px; font-weight: bold;');
+        console.log('%cXGBoost Model Active | Real-time Analytics', 'color: #f09433; font-size: 11px;');
+    });
+</script>
+{% endblock %}

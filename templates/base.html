@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Detect fake Instagram profiles using advanced machine learning. Get instant analysis, risk scores, and detailed insights.">
+    <meta name="keywords" content="Instagram, fake profile detector, social media security, AI detection, XGBoost">
+    <meta name="author" content="Suyash Magdum">
+    <title>{% block title %}Instagram Fake Profile Detector{% endblock %}</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Custom Styles -->
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+            min-height: 100vh;
+            padding-top: 80px;
+            color: #1a1a1a;
+        }
+        
+        /* Navbar Styles */
+        .navbar {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.05);
+            padding: 12px 0;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+        
+        .navbar.scrolled {
+            padding: 8px 0;
+            box-shadow: 0 4px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Professional Logo Styling */
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            padding: 6px 0;
+        }
+        
+        .brand-icon {
+            width: 38px;
+            height: 38px;
+            background: linear-gradient(135deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+        
+        .brand-icon i {
+            font-size: 1.3rem;
+            color: white;
+        }
+        
+        .navbar-brand:hover .brand-icon {
+            transform: scale(1.05);
+            border-radius: 12px;
+        }
+        
+        .brand-text {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.2;
+        }
+        
+        .brand-name {
+            font-weight: 800;
+            font-size: 1.2rem;
+            background: linear-gradient(135deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.3px;
+        }
+        
+        .brand-tagline {
+            font-size: 0.65rem;
+            color: #8e8e8e;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+        }
+        
+        .nav-link {
+            font-weight: 500;
+            color: #4a5568 !important;
+            transition: all 0.3s;
+            margin: 0 5px;
+            font-size: 0.95rem;
+            border-radius: 50px;
+            padding: 8px 16px;
+        }
+        
+        .nav-link:hover {
+            color: #dc2743 !important;
+            background: rgba(220, 39, 67, 0.08);
+            transform: translateY(-1px);
+        }
+        
+        .nav-link.active {
+            background: linear-gradient(135deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+            color: white !important;
+            font-weight: 600;
+        }
+        
+        .nav-link.active i {
+            color: white;
+        }
+        
+        /* User Profile Section - Professional */
+        .user-dropdown-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 5px 12px !important;
+            background: #f8f9fa;
+            border-radius: 50px !important;
+        }
+        
+        .user-dropdown-toggle:hover {
+            background: #f0f0f0;
+        }
+        
+        .user-avatar {
+            width: 34px;
+            height: 34px;
+            background: linear-gradient(135deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+        }
+        
+        .user-name-display {
+            font-weight: 600;
+            color: #262626;
+            font-size: 0.9rem;
+        }
+        
+        /* Dropdown Menu */
+        .dropdown-menu {
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+            padding: 8px 0;
+            margin-top: 12px;
+            min-width: 240px;
+            animation: dropdownFade 0.2s ease;
+        }
+        
+        @keyframes dropdownFade {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .dropdown-header-custom {
+            padding: 12px 16px;
+            background: #fafafa;
+            border-radius: 16px 16px 0 0;
+            margin: -8px 0 8px 0;
+        }
+        
+        .dropdown-user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .dropdown-avatar {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 1.1rem;
+            text-transform: uppercase;
+        }
+        
+        .dropdown-user-name {
+            font-weight: 700;
+            color: #262626;
+            font-size: 0.9rem;
+        }
+        
+        .dropdown-user-email {
+            font-size: 0.7rem;
+            color: #8e8e8e;
+        }
+        
+        .dropdown-item {
+            padding: 10px 20px;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+        
+        .dropdown-item i {
+            width: 20px;
+            margin-right: 8px;
+            color: #8e8e8e;
+        }
+        
+        .dropdown-item:hover {
+            background: linear-gradient(135deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+            color: white;
+            padding-left: 26px;
+        }
+        
+        .dropdown-item:hover i {
+            color: white;
+        }
+        
+        .dropdown-item.text-danger:hover {
+            background: #dc2743;
+            color: white;
+        }
+        
+        .dropdown-divider {
+            margin: 8px 0;
+            border-color: #efefef;
+        }
+        
+        /* Main Container */
+        .main-container {
+            min-height: calc(100vh - 280px);
+            padding: 20px 0 40px;
+        }
+        
+        /* Card Styles */
+        .card {
+            border: none;
+            border-radius: 24px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            background: rgba(255, 255, 255, 0.98);
+            transition: all 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+        }
+        
+        /* Button Styles */
+        .btn-primary {
+            background: linear-gradient(135deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+            border: none;
+            border-radius: 50px;
+            padding: 12px 32px;
+            font-weight: 600;
+            transition: all 0.3s;
+            letter-spacing: 0.3px;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(220, 39, 67, 0.35);
+            color: white;
+        }
+        
+        .btn-outline-primary {
+            border: 2px solid #dc2743;
+            color: #dc2743;
+            border-radius: 50px;
+            padding: 10px 28px;
+            font-weight: 600;
+            transition: all 0.3s;
+            background: transparent;
+        }
+        
+        .btn-outline-primary:hover {
+            background: linear-gradient(135deg, #dc2743, #bc1888);
+            border-color: transparent;
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Flash Messages */
+        .flash-messages {
+            position: fixed;
+            top: 95px;
+            right: 25px;
+            z-index: 1001;
+            max-width: 380px;
+            width: 100%;
+        }
+        
+        .alert {
+            border-radius: 16px;
+            border: none;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+            backdrop-filter: blur(10px);
+            animation: slideInRight 0.3s ease;
+        }
+        
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        /* Footer */
+        .footer {
+            background: rgba(0, 0, 0, 0.88);
+            color: #ffffff;
+            padding: 48px 0 24px;
+            margin-top: 60px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        
+        .footer h5, .footer h6 {
+            font-weight: 600;
+            margin-bottom: 20px;
+            letter-spacing: -0.2px;
+            color: white;
+        }
+        
+        .footer a {
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            transition: all 0.3s;
+            font-size: 0.85rem;
+        }
+        
+        .footer a:hover {
+            color: white;
+            transform: translateX(3px);
+            display: inline-block;
+        }
+        
+        .social-icons a {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 38px;
+            height: 38px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            margin: 0 6px;
+            transition: all 0.3s;
+            color: white;
+            text-decoration: none;
+        }
+        
+        .social-icons a:hover {
+            transform: translateY(-3px);
+            background: linear-gradient(135deg, #f09433, #bc1888);
+        }
+        
+        /* Scroll to Top */
+        .scroll-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, #f09433, #bc1888);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: none;
+            z-index: 1000;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s;
+            font-size: 1.1rem;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .scroll-top:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
+        }
+        
+        /* Loading Overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(4px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        
+        .loading-spinner {
+            background: white;
+            padding: 25px 35px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+        }
+        
+        .loading-spinner .spinner-border {
+            width: 2.5rem;
+            height: 2.5rem;
+            color: #dc2743;
+        }
+        
+        .loading-spinner p {
+            margin-top: 12px;
+            margin-bottom: 0;
+            font-weight: 600;
+            color: #262626;
+        }
+        
+        /* Responsive */
+        @media (max-width: 991px) {
+            body {
+                padding-top: 68px;
+            }
+            
+            .navbar-collapse {
+                background: white;
+                padding: 20px;
+                border-radius: 20px;
+                margin-top: 12px;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+                max-height: calc(100vh - 80px);
+                overflow-y: auto;
+            }
+            
+            .nav-link {
+                padding: 10px 12px;
+            }
+            
+            .user-dropdown-toggle {
+                justify-content: space-between;
+            }
+            
+            .brand-tagline {
+                display: none;
+            }
+            
+            .brand-icon {
+                width: 32px;
+                height: 32px;
+            }
+            
+            .brand-name {
+                font-size: 1rem;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .flash-messages {
+                top: 75px;
+                right: 15px;
+                left: 15px;
+                max-width: none;
+            }
+            
+            .btn-primary, .btn-outline-primary {
+                padding: 8px 24px;
+                font-size: 0.9rem;
+            }
+            
+            .footer {
+                padding: 32px 0 20px;
+            }
+            
+            .scroll-top {
+                bottom: 20px;
+                right: 20px;
+                width: 40px;
+                height: 40px;
+            }
+            
+            .main-container {
+                padding: 15px 0 30px;
+            }
+        }
+        
+        /* Animation */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(25px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .fade-in-up {
+            animation: fadeInUp 0.5s ease-out;
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #f09433, #bc1888);
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, #bc1888, #dc2743);
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Processing...</span>
+            </div>
+            <p>Analyzing profile...</p>
+        </div>
+    </div>
+    
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg" id="mainNav">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('index') }}">
+                <div class="brand-icon">
+                    <i class="fab fa-instagram"></i>
+                </div>
+                <div class="brand-text">
+                    <span class="brand-name">ProfileGuard</span>
+                    <span class="brand-tagline">AI Detection System</span>
+                </div>
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto align-items-center gap-1">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'index' %}active{% endif %}" 
+                           href="{{ url_for('index') }}">
+                            <i class="fas fa-home me-1"></i> Home
+                        </a>
+                    </li>
+                    {% if current_user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint == 'history' %}active{% endif %}" 
+                               href="{{ url_for('history') }}">
+                                <i class="fas fa-clock me-1"></i> History
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}" 
+                               href="{{ url_for('dashboard') }}">
+                                <i class="fas fa-chart-line me-1"></i> Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint == 'predict' %}active{% endif %}" 
+                               href="{{ url_for('predict') }}">
+                                <i class="fas fa-search me-1"></i> Analyze
+                            </a>
+                        </li>
+                        
+                        <!-- Professional User Dropdown -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle user-dropdown-toggle" href="#" id="userDropdown" role="button" 
+                               data-bs-toggle="dropdown" aria-expanded="false">
+                                <div class="user-avatar">
+                                    {{ current_user.username[0].upper() }}
+                                </div>
+                                <span class="user-name-display d-none d-md-inline">{{ current_user.username }}</span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li class="dropdown-header-custom">
+                                    <div class="dropdown-user-info">
+                                        <div class="dropdown-avatar">
+                                            {{ current_user.username[0].upper() }}
+                                        </div>
+                                        <div>
+                                            <div class="dropdown-user-name">{{ current_user.username }}</div>
+                                            <div class="dropdown-user-email">{{ current_user.email }}</div>
+                                        </div>
+                                    </div>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item" href="{{ url_for('dashboard') }}">
+                                        <i class="fas fa-chart-pie"></i> Overview
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{{ url_for('history') }}">
+                                        <i class="fas fa-history"></i> Activity Log
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{{ url_for('predict') }}">
+                                        <i class="fas fa-search"></i> New Analysis
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item text-danger" href="{{ url_for('logout') }}">
+                                        <i class="fas fa-sign-out-alt"></i> Sign Out
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint == 'login' %}active{% endif %}" 
+                               href="{{ url_for('login') }}">
+                                <i class="fas fa-sign-in-alt me-1"></i> Sign In
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="btn btn-primary ms-2" href="{{ url_for('signup') }}">
+                                <i class="fas fa-user-plus me-1"></i> Get Started
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Flash Messages -->
+    <div class="flash-messages">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category if category != 'error' else 'danger' }} alert-dismissible fade show" role="alert">
+                    <i class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'error' %}exclamation-circle{% else %}info-circle{% endif %} me-2"></i>
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endwith %}
+    </div>
+    
+    <!-- Main Content -->
+    <div class="main-container">
+        <div class="container">
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+    
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4 mb-4 mb-md-0">
+                    <h5><i class="fab fa-instagram me-2"></i> ProfileGuard</h5>
+                    <p class="mt-3 small text-white-50" style="line-height: 1.6;">Protecting the Instagram community by detecting fake profiles using advanced XGBoost machine learning algorithms.</p>
+                    <div class="social-icons mt-3">
+                        <a href="https://www.instagram.com/its_suyashzone/" target="_blank" aria-label="Instagram" rel="noopener noreferrer">
+                            <i class="fab fa-instagram"></i>
+                        </a>
+                        <a href="https://www.linkedin.com/in/suyash-magdum-a53b5a228/" target="_blank" aria-label="LinkedIn" rel="noopener noreferrer">
+                            <i class="fab fa-linkedin-in"></i>
+                        </a>
+                        <a href="https://github.com/suyashmagdum8055" target="_blank" aria-label="GitHub" rel="noopener noreferrer">
+                            <i class="fab fa-github"></i>
+                        </a>
+                        <a href="https://x.com/MagdumSuya89993" target="_blank" aria-label="Twitter" rel="noopener noreferrer">
+                            <i class="fab fa-twitter"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="col-md-2 mb-4 mb-md-0">
+                    <h6>Quick Links</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><a href="{{ url_for('index') }}">Home</a></li>
+                        {% if current_user.is_authenticated %}
+                            <li class="mb-2"><a href="{{ url_for('predict') }}">Analyze</a></li>
+                            <li class="mb-2"><a href="{{ url_for('history') }}">History</a></li>
+                            <li class="mb-2"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                        {% else %}
+                            <li class="mb-2"><a href="{{ url_for('login') }}">Sign In</a></li>
+                            <li class="mb-2"><a href="{{ url_for('signup') }}">Get Started</a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+                <div class="col-md-3 mb-4 mb-md-0">
+                    <h6>Features</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><i class="fas fa-microchip me-2"></i> XGBoost AI Detection</li>
+                        <li class="mb-2"><i class="fas fa-shield-alt me-2"></i> Real-time Analysis</li>
+                        <li class="mb-2"><i class="fas fa-history me-2"></i> Search History</li>
+                        <li class="mb-2"><i class="fas fa-chart-bar me-2"></i> Detailed Reports</li>
+                    </ul>
+                </div>
+                <div class="col-md-3 mb-4 mb-md-0">
+                    <h6>Developer</h6>
+                    <div class="mt-2">
+                        <div class="d-flex align-items-center mb-3">
+                            <i class="fas fa-code fa-2x me-3" style="color: #f09433;"></i>
+                            <div>
+                                <strong class="d-block">Suyash Magdum</strong>
+                                <small class="text-white-50">Data Scientist</small>
+                            </div>
+                        </div>
+                        <div class="small text-white-50">
+                            <div class="mb-2"><i class="fas fa-calendar-alt me-2"></i> Project Duration: 3 Months</div>
+                            <div class="mb-2"><i class="fas fa-trophy me-2"></i> Major Project 2026</div>
+                            <div><i class="fas fa-graduation-cap me-2"></i> Final Year Project</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <hr class="mt-4 mb-3" style="background: rgba(255,255,255,0.1);">
+            <div class="text-center">
+                <p class="mb-0 small text-white-50">
+                    © 2026 <strong class="text-white">Suyash Magdum</strong>. All Rights Reserved.
+                </p>
+                <p class="mt-2 small text-white-50">
+                    <i class="fas fa-shield-alt me-1"></i> Protecting the Instagram community since 2026
+                </p>
+            </div>
+        </div>
+    </footer>
+    
+    <!-- Scroll to Top Button -->
+    <button class="scroll-top" id="scrollTop">
+        <i class="fas fa-chevron-up"></i>
+    </button>
+    
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Navbar scroll effect
+        window.addEventListener('scroll', function() {
+            const navbar = document.getElementById('mainNav');
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+        
+        // Scroll to top button
+        const scrollTopBtn = document.getElementById('scrollTop');
+        
+        window.addEventListener('scroll', function() {
+            if (window.scrollY > 300) {
+                scrollTopBtn.style.display = 'flex';
+            } else {
+                scrollTopBtn.style.display = 'none';
+            }
+        });
+        
+        scrollTopBtn.addEventListener('click', function() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+        
+        // Auto-hide flash messages after 5 seconds
+        setTimeout(function() {
+            document.querySelectorAll('.alert').forEach(function(alert) {
+                setTimeout(function() {
+                    alert.style.opacity = '0';
+                    alert.style.transform = 'translateX(50px)';
+                    setTimeout(function() {
+                        alert.remove();
+                    }, 300);
+                }, 4000);
+            });
+        }, 1000);
+        
+        // Loading overlay on form submit
+        document.querySelectorAll('form').forEach(function(form) {
+            form.addEventListener('submit', function() {
+                const overlay = document.getElementById('loadingOverlay');
+                if (overlay) {
+                    overlay.style.display = 'flex';
+                }
+            });
+        });
+        
+        // Professional console greeting
+        console.log('%c ProfileGuard - AI Detection System', 'color: #dc2743; font-size: 14px; font-weight: bold;');
+        console.log('%c Developed by Suyash Magdum | Major Project 2026', 'color: #f09433; font-size: 11px;');
+        console.log('%c XGBoost Model Active | 11 Features Analysis | 95% Accuracy', 'color: #833ab4; font-size: 11px;');
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const dropdown = document.querySelector('.dropdown-menu.show');
+            const toggle = document.querySelector('.user-dropdown-toggle');
+            if (dropdown && !toggle.contains(event.target) && !dropdown.contains(event.target)) {
+                bootstrap.Dropdown.getInstance(toggle)?.hide();
+            }
+        });
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

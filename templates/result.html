@@ -1,0 +1,847 @@
+{% extends "base.html" %}
+
+{% block title %}Analysis Result - Instagram Fake Profile Detector{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Instagram Color Theme Variables */
+    :root {
+        --instagram-gradient: linear-gradient(135deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+        --success-green: #56ab2f;
+        --danger-red: #dc2743;
+        --warning-orange: #f09433;
+        --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
+        --shadow-md: 0 5px 20px rgba(0, 0, 0, 0.1);
+        --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.12);
+    }
+    
+    .result-header {
+        background: var(--instagram-gradient);
+        border-radius: 28px;
+        padding: 50px 40px;
+        margin-bottom: 35px;
+        color: white;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+        box-shadow: var(--shadow-lg);
+    }
+    
+    .result-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3E%3Cpath fill='rgba(255,255,255,0.08)' fill-opacity='1' d='M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,122.7C672,117,768,139,864,154.7C960,171,1056,181,1152,165.3C1248,149,1344,107,1392,85.3L1440,64L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z'%3E%3C/path%3E%3C/svg%3E") no-repeat bottom;
+        background-size: cover;
+        opacity: 0.4;
+        pointer-events: none;
+    }
+    
+    .result-header h1 {
+        font-size: 2.5rem;
+        font-weight: 800;
+        margin-bottom: 15px;
+        position: relative;
+        z-index: 1;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.15);
+    }
+    
+    .prediction-badge {
+        display: inline-block;
+        padding: 15px 35px;
+        border-radius: 60px;
+        font-size: 1.6rem;
+        font-weight: 700;
+        background: rgba(255,255,255,0.2);
+        backdrop-filter: blur(10px);
+        margin-top: 20px;
+        position: relative;
+        z-index: 1;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    /* Insight Cards */
+    .insight-card {
+        background: white;
+        border-radius: 24px;
+        padding: 25px;
+        margin-bottom: 25px;
+        box-shadow: var(--shadow-md);
+        transition: all 0.3s ease;
+        border: 1px solid rgba(0,0,0,0.05);
+    }
+    
+    .insight-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--shadow-lg);
+    }
+    
+    .card-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: #262626;
+        padding-bottom: 12px;
+        border-bottom: 2px solid #efefef;
+    }
+    
+    .card-title i {
+        font-size: 1.3rem;
+    }
+    
+    /* Confidence Meter */
+    .meter-container {
+        background: #f0f0f0;
+        border-radius: 50px;
+        padding: 4px;
+        margin: 15px 0;
+    }
+    
+    .meter-fill {
+        border-radius: 50px;
+        padding: 10px 20px;
+        color: white;
+        font-weight: 700;
+        text-align: right;
+        transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .meter-fill.real {
+        background: linear-gradient(90deg, #56ab2f, #85d469, #56ab2f);
+        background-size: 200% 200%;
+    }
+    
+    .meter-fill.fake {
+        background: linear-gradient(90deg, #dc2743, #f56565, #dc2743);
+        background-size: 200% 200%;
+    }
+    
+    .confidence-text {
+        font-size: 2rem;
+        font-weight: 800;
+        margin: 10px 0;
+        background: var(--instagram-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    
+    /* Feature Grid */
+    .feature-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 12px;
+    }
+    
+    .feature-item {
+        background: #fafafa;
+        border-radius: 16px;
+        padding: 12px;
+        text-align: center;
+        transition: all 0.3s;
+        border: 1px solid #efefef;
+    }
+    
+    .feature-item:hover {
+        transform: translateY(-2px);
+        border-color: #f09433;
+        background: white;
+    }
+    
+    .feature-name {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        font-weight: 600;
+        color: #8e8e8e;
+        letter-spacing: 0.5px;
+        margin-bottom: 8px;
+    }
+    
+    .feature-value {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #262626;
+    }
+    
+    /* Flag Items */
+    .flag-item {
+        padding: 14px;
+        margin-bottom: 12px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        transition: all 0.3s;
+    }
+    
+    .flag-item:hover {
+        transform: translateX(5px);
+    }
+    
+    .flag-critical {
+        background: linear-gradient(135deg, #fff5f5 0%, #ffe8e8 100%);
+        border-left: 4px solid #dc2743;
+    }
+    
+    .flag-high {
+        background: linear-gradient(135deg, #fff8f0 0%, #fff0e0 100%);
+        border-left: 4px solid #f09433;
+    }
+    
+    .flag-medium {
+        background: linear-gradient(135deg, #fffef5 0%, #fff9e6 100%);
+        border-left: 4px solid #fcb045;
+    }
+    
+    .flag-good {
+        background: linear-gradient(135deg, #f0fff4 0%, #e6ffe6 100%);
+        border-left: 4px solid #56ab2f;
+    }
+    
+    .flag-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+        flex-shrink: 0;
+    }
+    
+    .flag-critical .flag-icon {
+        background: #dc2743;
+        color: white;
+    }
+    
+    .flag-high .flag-icon {
+        background: #f09433;
+        color: white;
+    }
+    
+    .flag-medium .flag-icon {
+        background: #fcb045;
+        color: white;
+    }
+    
+    .flag-good .flag-icon {
+        background: #56ab2f;
+        color: white;
+    }
+    
+    .flag-title {
+        font-weight: 700;
+        margin-bottom: 4px;
+        color: #262626;
+        font-size: 0.9rem;
+    }
+    
+    .flag-reason {
+        font-size: 0.75rem;
+        color: #8e8e8e;
+    }
+    
+    /* Recommendation Items - Professional Version */
+    .recommendation-item {
+        padding: 14px;
+        margin-bottom: 12px;
+        background: #fafafa;
+        border-radius: 16px;
+        display: flex;
+        align-items: flex-start;
+        gap: 15px;
+        transition: all 0.3s;
+        border: 1px solid #efefef;
+    }
+    
+    .recommendation-item:hover {
+        transform: translateX(5px);
+        border-color: #f09433;
+        background: white;
+    }
+    
+    .recommendation-icon {
+        width: 32px;
+        height: 32px;
+        background: var(--instagram-gradient);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        flex-shrink: 0;
+        font-size: 0.8rem;
+    }
+    
+    .recommendation-text {
+        flex: 1;
+        font-size: 0.85rem;
+        line-height: 1.4;
+        color: #2d3748;
+    }
+    
+    .recommendation-category {
+        display: inline-block;
+        font-size: 0.65rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 2px 8px;
+        border-radius: 20px;
+        margin-bottom: 6px;
+    }
+    
+    .rec-security {
+        background: #e8f0fe;
+        color: #1a73e8;
+    }
+    
+    .rec-warning {
+        background: #fef3e8;
+        color: #e67e22;
+    }
+    
+    .rec-success {
+        background: #e8f5e9;
+        color: #2e7d32;
+    }
+    
+    .rec-info {
+        background: #e3f2fd;
+        color: #1565c0;
+    }
+    
+    /* Profile Info Grid */
+    .profile-info-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+    
+    .info-item {
+        background: #fafafa;
+        border-radius: 14px;
+        padding: 12px;
+        text-align: center;
+        transition: all 0.3s;
+    }
+    
+    .info-item:hover {
+        background: white;
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .info-label {
+        font-size: 0.65rem;
+        text-transform: uppercase;
+        font-weight: 600;
+        color: #8e8e8e;
+        letter-spacing: 0.5px;
+        margin-bottom: 6px;
+    }
+    
+    .info-value {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: #262626;
+    }
+    
+    /* Risk Badge */
+    .risk-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 16px;
+        border-radius: 50px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        gap: 6px;
+    }
+    
+    .risk-low {
+        background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+        color: #155724;
+    }
+    
+    .risk-medium {
+        background: linear-gradient(135deg, #fff3cd 0%, #ffeeba 100%);
+        color: #856404;
+    }
+    
+    .risk-high {
+        background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+        color: #721c24;
+    }
+    
+    .risk-critical {
+        background: linear-gradient(135deg, #f5c6cb 0%, #f1b0b7 100%);
+        color: #721c24;
+    }
+    
+    /* Action Buttons */
+    .btn-gradient {
+        background: var(--instagram-gradient);
+        border: none;
+        border-radius: 50px;
+        padding: 12px 28px;
+        font-weight: 600;
+        color: white;
+        transition: all 0.3s;
+        text-align: center;
+        display: inline-block;
+        text-decoration: none;
+    }
+    
+    .btn-gradient:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 20px rgba(220, 39, 67, 0.4);
+        color: white;
+    }
+    
+    .btn-outline-gradient {
+        background: transparent;
+        border: 2px solid #dc2743;
+        border-radius: 50px;
+        padding: 10px 26px;
+        font-weight: 600;
+        color: #dc2743;
+        transition: all 0.3s;
+        text-align: center;
+        display: inline-block;
+        text-decoration: none;
+    }
+    
+    .btn-outline-gradient:hover {
+        background: var(--instagram-gradient);
+        border-color: transparent;
+        color: white;
+        transform: translateY(-2px);
+    }
+    
+    /* Bio Section */
+    .bio-section {
+        margin-top: 15px;
+        padding: 15px;
+        background: linear-gradient(135deg, #fafafa 0%, #ffffff 100%);
+        border-radius: 16px;
+        border: 1px solid #efefef;
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+        .result-header {
+            padding: 30px 20px;
+        }
+        
+        .result-header h1 {
+            font-size: 1.5rem;
+        }
+        
+        .prediction-badge {
+            font-size: 1.1rem;
+            padding: 10px 20px;
+        }
+        
+        .feature-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .profile-info-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .btn-gradient, .btn-outline-gradient {
+            padding: 10px 20px;
+            font-size: 0.85rem;
+        }
+        
+        .confidence-text {
+            font-size: 1.5rem;
+        }
+    }
+    
+    /* Animations */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .insight-card {
+        animation: fadeInUp 0.5s ease-out forwards;
+        opacity: 0;
+    }
+    
+    .insight-card:nth-child(1) { animation-delay: 0.1s; }
+    .insight-card:nth-child(2) { animation-delay: 0.2s; }
+    .insight-card:nth-child(3) { animation-delay: 0.3s; }
+    .insight-card:nth-child(4) { animation-delay: 0.4s; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Result Header -->
+<div class="result-header">
+    <i class="fab fa-instagram fa-3x mb-3"></i>
+    <h1>@{{ prediction.username if prediction else profile_data.username }}</h1>
+    <div class="prediction-badge">
+        <i class="fas fa-{{ 'exclamation-triangle' if (prediction.prediction if prediction else analysis.prediction) == 'Fake' else 'check-circle' }} me-2"></i>
+        {{ prediction.prediction if prediction else analysis.prediction }} Profile Detected
+    </div>
+</div>
+
+<div class="row">
+    <!-- Left Column -->
+    <div class="col-lg-6">
+        <!-- Confidence Score Card -->
+        <div class="insight-card">
+            <div class="card-title">
+                <i class="fas fa-chart-line" style="color: #f09433;"></i>
+                <span>Confidence Score</span>
+            </div>
+            <div class="meter-container">
+                <div class="meter-fill {{ 'real' if (prediction.prediction if prediction else analysis.prediction) == 'Real' else 'fake' }}" 
+                     style="width: {{ (prediction.confidence if prediction else analysis.confidence * 100) }}%">
+                    {{ (prediction.confidence if prediction else analysis.confidence * 100) }}%
+                </div>
+            </div>
+            <div class="confidence-text">
+                {{ (prediction.confidence if prediction else analysis.confidence * 100) }}%
+            </div>
+            <p class="text-muted mb-0">
+                <i class="fas fa-chart-simple me-1"></i>
+                XGBoost Model confidence in this prediction
+            </p>
+        </div>
+        
+        <!-- Risk Assessment Card -->
+        <div class="insight-card">
+            <div class="card-title">
+                <i class="fas fa-shield-alt" style="color: #dc2743;"></i>
+                <span>Risk Assessment</span>
+            </div>
+            <div class="meter-container">
+                <div class="meter-fill fake" style="width: {{ prediction.risk_score if prediction else analysis.risk_score }}%">
+                    {{ prediction.risk_score if prediction else analysis.risk_score }}%
+                </div>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <span class="risk-badge risk-{{ (prediction.risk_level if prediction else analysis.risk_level)|lower }}">
+                    <i class="fas fa-{% if (prediction.risk_level if prediction else analysis.risk_level) == 'Critical' %}skull{% elif (prediction.risk_level if prediction else analysis.risk_level) == 'High' %}exclamation-triangle{% elif (prediction.risk_level if prediction else analysis.risk_level) == 'Medium' %}info-circle{% else %}smile{% endif %} me-1"></i>
+                    {{ prediction.risk_level if prediction else analysis.risk_level }} Risk
+                </span>
+                <span class="text-muted small">Based on 11+ analysis factors</span>
+            </div>
+        </div>
+        
+        <!-- Features Analyzed Card -->
+        <div class="insight-card">
+            <div class="card-title">
+                <i class="fas fa-microchip" style="color: #833ab4;"></i>
+                <span>Features Analyzed by XGBoost</span>
+            </div>
+            <div class="feature-grid">
+                <div class="feature-item">
+                    <div class="feature-name">Profile Picture</div>
+                    <div class="feature-value">
+                        {% if profile_data.has_profile_pic %}
+                            <i class="fas fa-check-circle text-success"></i> Yes
+                        {% else %}
+                            <i class="fas fa-times-circle text-danger"></i> No
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-name">Private Account</div>
+                    <div class="feature-value">
+                        {% if profile_data.is_private %}
+                            <i class="fas fa-lock text-warning"></i> Yes
+                        {% else %}
+                            <i class="fas fa-globe text-success"></i> No
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-name">External URL</div>
+                    <div class="feature-value">
+                        {% if profile_data.external_url %}
+                            <i class="fas fa-check-circle text-success"></i> Yes
+                        {% else %}
+                            <i class="fas fa-times-circle text-muted"></i> No
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-name">Total Posts</div>
+                    <div class="feature-value">{{ profile_data.posts|int }}</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-name">Followers Count</div>
+                    <div class="feature-value">{{ profile_data.followers|int }}</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-name">Following Count</div>
+                    <div class="feature-value">{{ profile_data.following|int }}</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-name">Full Name Words</div>
+                    <div class="feature-value">{{ profile_data.full_name.split()|length if profile_data.full_name else 0 }}</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-name">Bio Length</div>
+                    <div class="feature-value">{{ profile_data.bio|length if profile_data.bio else 0 }} characters</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-name">Name Matches Username</div>
+                    <div class="feature-value">
+                        {% if profile_data.full_name|lower == profile_data.username %}
+                            <i class="fas fa-check-circle text-success"></i> Yes
+                        {% else %}
+                            <i class="fas fa-times-circle text-danger"></i> No
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Right Column -->
+    <div class="col-lg-6">
+        <!-- Profile Information Card -->
+        <div class="insight-card">
+            <div class="card-title">
+                <i class="fab fa-instagram" style="color: #bc1888;"></i>
+                <span>Profile Information</span>
+            </div>
+            <div class="profile-info-grid">
+                <div class="info-item">
+                    <div class="info-label">Username</div>
+                    <div class="info-value">@{{ profile_data.username }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Full Name</div>
+                    <div class="info-value">{{ profile_data.full_name or 'Not provided' }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Posts</div>
+                    <div class="info-value">{{ profile_data.posts|int }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Followers</div>
+                    <div class="info-value">{{ profile_data.followers|int }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Following</div>
+                    <div class="info-value">{{ profile_data.following|int }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Account Status</div>
+                    <div class="info-value">
+                        {% if profile_data.is_private %}
+                            <span class="text-warning"><i class="fas fa-lock"></i> Private</span>
+                        {% else %}
+                            <span class="text-success"><i class="fas fa-globe"></i> Public</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Profile Picture</div>
+                    <div class="info-value">
+                        {% if profile_data.has_profile_pic %}
+                            <span class="text-success"><i class="fas fa-check-circle"></i> Present</span>
+                        {% else %}
+                            <span class="text-danger"><i class="fas fa-times-circle"></i> Missing</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">External Link</div>
+                    <div class="info-value">
+                        {% if profile_data.external_url %}
+                            <span class="text-success"><i class="fas fa-check-circle"></i> Present</span>
+                        {% else %}
+                            <span class="text-muted">Not Available</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Analysis Date</div>
+                    <div class="info-value">{{ prediction.created_at if prediction else 'Just now' }}</div>
+                </div>
+            </div>
+            {% if profile_data.bio %}
+            <div class="bio-section">
+                <small class="text-muted text-uppercase fw-bold">Biography</small>
+                <div class="mt-2">{{ profile_data.bio }}</div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Red Flags -->
+        {% if analysis.red_flags and analysis.red_flags|length > 0 %}
+        <div class="insight-card">
+            <div class="card-title">
+                <i class="fas fa-exclamation-triangle" style="color: #dc2743;"></i>
+                <span>Risk Indicators Detected ({{ analysis.red_flags|length }})</span>
+            </div>
+            {% for flag in analysis.red_flags %}
+            <div class="flag-item flag-{{ flag.type if flag.type else 'medium' }}">
+                <div class="flag-icon">
+                    <i class="fas fa-{% if flag.type == 'critical' %}skull{% elif flag.type == 'high' %}exclamation{% else %}info{% endif %}"></i>
+                </div>
+                <div class="flag-content">
+                    <div class="flag-title">{{ flag.message }}</div>
+                    <div class="flag-reason">{{ flag.reason }}</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        <!-- Green Flags -->
+        {% if analysis.green_flags and analysis.green_flags|length > 0 %}
+        <div class="insight-card">
+            <div class="card-title">
+                <i class="fas fa-check-circle" style="color: #56ab2f;"></i>
+                <span>Authenticity Indicators ({{ analysis.green_flags|length }})</span>
+            </div>
+            {% for flag in analysis.green_flags %}
+            <div class="flag-item flag-good">
+                <div class="flag-icon">
+                    <i class="fas fa-check"></i>
+                </div>
+                <div class="flag-content">
+                    <div class="flag-title">{{ flag.message }}</div>
+                    <div class="flag-reason">{{ flag.reason }}</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        <!-- Recommendations - Professional Version Without Emojis -->
+        <div class="insight-card">
+            <div class="card-title">
+                <i class="fas fa-lightbulb" style="color: #fcb045;"></i>
+                <span>Security Recommendations</span>
+            </div>
+            
+            {% if (prediction.prediction if prediction else analysis.prediction) == 'Real' %}
+            <div class="recommendation-item">
+                <div class="recommendation-icon">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <div class="recommendation-text">
+                    <span class="recommendation-category rec-success">VERIFIED</span>
+                    <div>This profile exhibits characteristics consistent with authentic Instagram accounts. Standard security protocols apply.</div>
+                </div>
+            </div>
+            <div class="recommendation-item">
+                <div class="recommendation-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="recommendation-text">
+                    <span class="recommendation-category rec-info">MONITORING</span>
+                    <div>No immediate security concerns identified. Continue standard security practices when interacting.</div>
+                </div>
+            </div>
+            <div class="recommendation-item">
+                <div class="recommendation-icon">
+                    <i class="fas fa-search"></i>
+                </div>
+                <div class="recommendation-text">
+                    <span class="recommendation-category rec-info">VERIFICATION</span>
+                    <div>Cross-reference profile information with other sources for enhanced verification confidence.</div>
+                </div>
+            </div>
+            <div class="recommendation-item">
+                <div class="recommendation-icon">
+                    <i class="fas fa-lock"></i>
+                </div>
+                <div class="recommendation-text">
+                    <span class="recommendation-category rec-security">BEST PRACTICES</span>
+                    <div>Maintain standard security protocols: avoid sharing sensitive information and enable two-factor authentication for your own account.</div>
+                </div>
+            </div>
+            {% else %}
+            <div class="recommendation-item">
+                <div class="recommendation-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="recommendation-text">
+                    <span class="recommendation-category rec-warning">HIGH PRIORITY</span>
+                    <div>Multiple risk indicators detected. Exercise increased caution when interacting with this profile.</div>
+                </div>
+            </div>
+            <div class="recommendation-item">
+                <div class="recommendation-icon">
+                    <i class="fas fa-share-alt"></i>
+                </div>
+                <div class="recommendation-text">
+                    <span class="recommendation-category rec-warning">INFORMATION SHARING</span>
+                    <div>Avoid sharing personal or financial information with this account until identity is verified.</div>
+                </div>
+            </div>
+            <div class="recommendation-item">
+                <div class="recommendation-icon">
+                    <i class="fas fa-flag"></i>
+                </div>
+                <div class="recommendation-text">
+                    <span class="recommendation-category rec-warning">REPORTING</span>
+                    <div>Consider reporting suspicious behavior to platform moderators if encountered.</div>
+                </div>
+            </div>
+            <div class="recommendation-item">
+                <div class="recommendation-icon">
+                    <i class="fas fa-database"></i>
+                </div>
+                <div class="recommendation-text">
+                    <span class="recommendation-category rec-security">DOCUMENTATION</span>
+                    <div>Save this analysis report for future reference if additional verification is needed.</div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="d-flex gap-3 mt-3">
+            <a href="{{ url_for('predict') }}" class="btn-gradient flex-grow-1 text-center">
+                <i class="fas fa-search me-2"></i>New Analysis
+            </a>
+            <a href="{{ url_for('history') }}" class="btn-outline-gradient flex-grow-1 text-center">
+                <i class="fas fa-history me-2"></i>View History
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Animate meter bars on load
+    document.addEventListener('DOMContentLoaded', function() {
+        const meterFills = document.querySelectorAll('.meter-fill');
+        meterFills.forEach(fill => {
+            const width = fill.style.width;
+            fill.style.width = '0%';
+            setTimeout(() => {
+                fill.style.width = width;
+            }, 200);
+        });
+        
+        // Log result
+        console.log('%c Analysis Complete', 'color: #dc2743; font-size: 12px; font-weight: bold;');
+        console.log('%cPrediction: ' + '{{ prediction.prediction if prediction else analysis.prediction }}', 'color: #f09433; font-size: 11px;');
+    });
+</script>
+{% endblock %}
